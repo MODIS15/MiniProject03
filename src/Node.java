@@ -1,6 +1,6 @@
 import java.io.OutputStream;
 
-public class Node {
+public class Node{
 
     void listenForPut(){}
     void listenForGet(){}
