@@ -20,6 +20,8 @@ public class Node {
     private ServerSocket getInputSocket;
     private ServerSocket putInputSocket;
     private ServerSocket neighbourInputSocket;
+    private int rightNeighbourCapacity;
+    private int leftNeighbourCapacity;
 
 
     private Map<Integer, String> resources;
@@ -51,6 +53,9 @@ public class Node {
     private void initialize() {
         resources = new HashMap<Integer, String>();
         try {
+
+
+
             Runnable runnableNeighbour = this::listenForNewNeighbour;
             Runnable runnableGet = this::listenForGet;
             Runnable runnablePut = this::listenForPut;
@@ -66,8 +71,15 @@ public class Node {
             listenGet.start();
             listenPut.start();
             listenNeighbours.start();
-            //listenRight.start();    //Overvej om det er nødvendig. Vi kører  fra left to right så skal vi lytte på right?
+            listenRight.start();
             listenLeft.start();
+
+            if(leftSocket == null && rightSocket == null){
+                leftNeighbourCapacity=0;
+                rightNeighbourCapacity=0;
+            }
+            else requestCapacity();
+
         } catch (NumberFormatException e) {
             System.out.println("Invalid Port");
             initialize();
@@ -95,7 +107,7 @@ public class Node {
                 System.out.println("Connection from Put-client: " + s.getInetAddress() + " was established.");
                 ObjectInputStream input = new ObjectInputStream(s.getInputStream());
 
-                handlePutInput((PutMessage) input.readObject());
+                handlePutInput((PutMessage) input.readObject(), s);
 
                 s.close();
             }
@@ -123,7 +135,7 @@ public class Node {
                 System.out.println("Connection from Get-client: " + s.getInetAddress() + " was established.");
                 ObjectInputStream input = new ObjectInputStream(s.getInputStream());
 
-                handleGetInput((GetMessage) input.readObject());
+                handleGetInput((GetMessage) input.readObject(), s);
 
                 s.close();
             }
@@ -165,7 +177,7 @@ public class Node {
     private void listenRightSocket() {
         while (true) {
             if (rightSocket != null) {
-                //TODO Is this necessary to create?
+                //TODO listen for any capacity updates
             }
         }
     }
@@ -194,11 +206,12 @@ public class Node {
                         }
                     } else if (object instanceof PutMessage) {
                         System.out.println("Received propagated message from " + leftSocket.getInetAddress());
-                        handlePutInput((PutMessage) object);
+                        handlePutInput((PutMessage) object, rightSocket);
                     } else if (object instanceof GetMessage) {
                         System.out.println("Received get propagated request from " + leftSocket.getInetAddress());
-                        handleGetInput((GetMessage) object);
+                        handleGetInput((GetMessage) object, rightSocket);
                     }
+                    //TODO ADD HANDLING FOR CAPACITY UPDATE
                 }
             }
         } catch (IOException e) {
@@ -309,14 +322,64 @@ public class Node {
      *
      * @param message
      */
-    private void propagateMessage(Object message) {
+    private void propagateMessage(Object message, Socket socket) {
         try {
             System.out.println("Propagating resource");
-            ObjectOutputStream outputStream = new ObjectOutputStream(rightSocket.getOutputStream());
+            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
             outputStream.writeObject(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Used to notify neighbours of current capacity of this node.
+     */
+    private void notifyCapacity(){
+        try{
+            ObjectOutputStream right = new ObjectOutputStream(rightSocket.getOutputStream());
+            ObjectOutputStream left = new ObjectOutputStream(leftSocket.getOutputStream());
+
+            right.write(resources.size());
+            left.write(resources.size());
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void requestCapacity(){
+        //TODO NEED IMPLEMENTATION. EG. SEND REQUEST AND RECEIVE MESSAGE CONTAINING CAPACITY
+        try
+        {
+            if (rightSocket == null) {
+                ObjectOutputStream outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
+                ObjectInputStream inLeft = new ObjectInputStream(leftSocket.getInputStream());
+
+            }
+            if (leftSocket == null) {
+                ObjectOutputStream outRight = new ObjectOutputStream(rightSocket.getOutputStream());
+                ObjectInputStream inRight = new ObjectInputStream(rightSocket.getInputStream());
+
+
+
+            } else {
+                ObjectOutputStream outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
+                ObjectInputStream inLeft = new ObjectInputStream(leftSocket.getInputStream());
+
+                ObjectOutputStream outRight = new ObjectOutputStream(rightSocket.getOutputStream());
+                ObjectInputStream inRight = new ObjectInputStream(rightSocket.getInputStream());
+
+
+
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     //Put methods
@@ -325,11 +388,15 @@ public class Node {
      * Handle putmessage by either storing its resource or propagating it
      *
      * @param message
+     * @param socket
      */
-    private void handlePutInput(PutMessage message) {
+    private void handlePutInput(PutMessage message, Socket socket) {
         System.out.println("Handling incoming ressource...");
-        if (isKeyAvailable(message)) saveResource(message);
-        else propagateMessage(message);
+        if (isKeyAvailable(message)) {
+            saveResource(message);
+            notifyCapacity();
+        }
+        else propagateMessage(message,socket);
     }
 
     /**
@@ -359,11 +426,11 @@ public class Node {
      *
      * @param getMessage
      */
-    private void handleGetInput(GetMessage getMessage) {
+    private void handleGetInput(GetMessage getMessage, Socket socket) {
         if (resources.containsKey(getMessage.getKey())) sendResourceToGet(getMessage);
         else {
             System.out.println("resource not found. Request propagated");
-            propagateMessage(getMessage);
+            propagateMessage(getMessage, socket);
         }
     }
 

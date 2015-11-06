@@ -29,6 +29,7 @@ public class Put {
                 System.out.println("Enter message to put: ");
                 String input = System.console().readLine();
                 int key = input.hashCode();
+                System.out.println("Key of resource: "+key);
                 PutMessage message = new PutMessage(key, input);
 
                 Socket s = new Socket(ip, Integer.parseInt(port));
