@@ -1,31 +1,26 @@
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.util.ArrayList;
+import java.net.Socket;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Node{
 
-    private List<OutputStream> neighbourNodes;
+    private Socket leftSocket;
+    private Socket rightSocket;
     private ServerSocket getInputSocket;
     private ServerSocket putInputSocket;
-    private Map<Integer,PutMessage> resources;
+    private ServerSocket neighbourInputSocket;
+
+
+    private Map resources;
+
 
     public Node(){
-        try {
-            neighbourNodes = new ArrayList<>();
-            getInputSocket = new ServerSocket();
-            putInputSocket = new ServerSocket();
-            resources = new HashMap<>();
-            initialize();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            System.out.println("An IO Exception occurred when opening the socket");
-        }
+        resources = new HashMap<Integer,PutMessage>();
+        initialize();
+
     }
 
     private void initialize(){
@@ -33,11 +28,13 @@ public class Node{
         String getPort = System.console().readLine().trim();
         System.out.println("Input port for putPort:");
         String putPort = System.console().readLine().trim();
-
+        System.out.println("Input port for putPort:");
+        String neighbourPort = System.console().readLine().trim();
 
         try{
             listenForGet(Integer.parseInt(getPort));
             listenForPut(Integer.parseInt(putPort));
+            listenForNewNeighbour(Integer.parseInt(neighbourPort));
         }
         catch (NumberFormatException e){
             System.out.println("Invalid Port");
@@ -47,7 +44,7 @@ public class Node{
 
     }
 
-    void listenForPut(int port){
+   private void listenForPut(int port){
         try
         {
             putInputSocket = new ServerSocket(port);
@@ -58,7 +55,7 @@ public class Node{
         }
 
     }
-    void listenForGet(int port){
+    private void listenForGet(int port){
         try
         {
             getInputSocket = new ServerSocket(port);
@@ -69,11 +66,30 @@ public class Node{
         }
     }
 
-    void saveNeighbourNode(OutputStream node){
-        neighbourNodes.add(node);}
-    int notifyNeighbourAmount(){return neighbourNodes.size();}
-    PutMessage returnResource(int key){return resources.get(key);}
-    void updateResources(int key, PutMessage message){
+    private void listenForNewNeighbour(int neighbourInputPort){
+        try {
+            neighbourInputSocket = new ServerSocket(neighbourInputPort);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+   private void saveNeighbourNode(Socket node) {
+       if(leftSocket == null){
+           leftSocket = node;
+       }
+       else if (rightSocket == null){
+           rightSocket = node;
+       }
+       else{
+           ConnectMessage connectMessage = new ConnectMessage(rightSocket.getInetAddress().toString(),rightSocket.getPort());
+           //Send message og set den nye right socket til ny nabo
+       }
+
+   }
+
+    private void updateResources(int key, PutMessage message){
         OutputStream
         for(OutputStream node : neighbourNodes)
         {
