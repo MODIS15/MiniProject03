@@ -1,22 +1,24 @@
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Node{
 
-    private Map<Integer,OutputStream> neighbourSockets;
+    private List<OutputStream> neighbourNodes;
     private ServerSocket getInputSocket;
     private ServerSocket putInputSocket;
-    private Map<Integer,String> resources;
+    private Map<Integer,PutMessage> resources;
 
     public Node(){
         try {
-            neighbourSockets = new HashMap<Integer, OutputStream>();
+            neighbourNodes = new ArrayList<>();
             getInputSocket = new ServerSocket();
             putInputSocket = new ServerSocket();
-            resources = new HashMap<Integer, String>();
+            resources = new HashMap<>();
             initialize();
         }
         catch (IOException e)
@@ -67,15 +69,20 @@ public class Node{
         }
     }
 
-    void saveNeighbourNode(Integer key, OutputStream node){neighbourSockets.put(key, node);}
+    void saveNeighbourNode(OutputStream node){
+        neighbourNodes.add(node);}
+    int notifyNeighbourAmount(){return neighbourNodes.size();}
+    PutMessage returnResource(int key){return resources.get(key);}
+    void updateResources(int key, PutMessage message){
+        OutputStream
+        for(OutputStream node : neighbourNodes)
+        {
+//            if(node.)
+                resources.put(key ,message);
+        }
+    }
+//    OutputStream getNeighbourNode(int key){return neighbourNodes.get(key);}
 
-    int notifyNeighbourAmount(){return neighbourSockets.size();}
-
-    void updateResources(Integer key, String message){resources.put(key ,message);}
-
-    String returnResource(Integer key){return resources.get(key);}
-
-    OutputStream getNeighbourNode(Integer key){return neighbourSockets.get(key);}
 
     public void main(String[] args){
         Node node = new Node();
