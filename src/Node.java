@@ -340,6 +340,7 @@ public class Node {
             ObjectOutputStream right = new ObjectOutputStream(rightSocket.getOutputStream());
             ObjectOutputStream left = new ObjectOutputStream(leftSocket.getOutputStream());
 
+            //TODO MAYBE WE HAVE TO CREATE A NEW MESSAGE OR ADD CAPACITY TYPE IN UTILITYMESSAGE
             right.write(resources.size());
             left.write(resources.size());
 
