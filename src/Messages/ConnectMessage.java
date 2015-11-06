@@ -1,3 +1,5 @@
+package Messages;
+
 import java.io.Serializable;
 
 public class ConnectMessage implements Serializable{
