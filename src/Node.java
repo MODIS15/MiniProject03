@@ -55,7 +55,6 @@ public class Node {
         try {
 
 
-
             Runnable runnableNeighbour = this::listenForNewNeighbour;
             Runnable runnableGet = this::listenForGet;
             Runnable runnablePut = this::listenForPut;
@@ -74,11 +73,10 @@ public class Node {
             listenRight.start();
             listenLeft.start();
 
-            if(leftSocket == null && rightSocket == null){
-                leftNeighbourCapacity=0;
-                rightNeighbourCapacity=0;
-            }
-            else requestCapacity();
+            if (leftSocket == null && rightSocket == null) {
+                leftNeighbourCapacity = 0;
+                rightNeighbourCapacity = 0;
+            } else requestCapacity();
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid Port");
@@ -335,8 +333,8 @@ public class Node {
     /**
      * Used to notify neighbours of current capacity of this node.
      */
-    private void notifyCapacity(){
-        try{
+    private void notifyCapacity() {
+        try {
             ObjectOutputStream right = new ObjectOutputStream(rightSocket.getOutputStream());
             ObjectOutputStream left = new ObjectOutputStream(leftSocket.getOutputStream());
 
@@ -350,10 +348,9 @@ public class Node {
         }
     }
 
-    private void requestCapacity(){
+    private void requestCapacity() {
         //TODO NEED IMPLEMENTATION. EG. SEND REQUEST AND RECEIVE MESSAGE CONTAINING CAPACITY
-        try
-        {
+        try {
             if (rightSocket == null) {
                 ObjectOutputStream outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
                 ObjectInputStream inLeft = new ObjectInputStream(leftSocket.getInputStream());
@@ -364,15 +361,12 @@ public class Node {
                 ObjectInputStream inRight = new ObjectInputStream(rightSocket.getInputStream());
 
 
-
             } else {
                 ObjectOutputStream outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
                 ObjectInputStream inLeft = new ObjectInputStream(leftSocket.getInputStream());
 
                 ObjectOutputStream outRight = new ObjectOutputStream(rightSocket.getOutputStream());
                 ObjectInputStream inRight = new ObjectInputStream(rightSocket.getInputStream());
-
-
 
 
             }
@@ -396,8 +390,7 @@ public class Node {
         if (isKeyAvailable(message)) {
             saveResource(message);
             notifyCapacity();
-        }
-        else propagateMessage(message,socket);
+        } else propagateMessage(message, socket);
     }
 
     /**
