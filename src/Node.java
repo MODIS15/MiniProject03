@@ -1,21 +1,29 @@
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
-
-import java.io.Console;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.*;
-import java.util.List;
+import java.net.ServerSocket;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Node{
 
-    private List<OutputStream> neighbourSockets;
+    private Map<Integer,OutputStream> neighbourSockets;
     private ServerSocket getInputSocket;
     private ServerSocket putInputSocket;
-    private Map<Integer,String> ressources;
+    private Map<Integer,String> resources;
 
     public Node(){
-        initialize();
+        try {
+            neighbourSockets = new HashMap<Integer, OutputStream>();
+            getInputSocket = new ServerSocket();
+            putInputSocket = new ServerSocket();
+            resources = new HashMap<Integer, String>();
+            initialize();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            System.out.println("An IO Exception occurred when opening the socket");
+        }
     }
 
     private void initialize(){
@@ -58,14 +66,16 @@ public class Node{
             e.printStackTrace();
         }
     }
-    void saveNeighbourNode(OutputStream node){}
-    void notifyNeighbourCapacity(){}
-    void updateResourceCapacity(){}
-    void returnResource(){}
 
-    OutputStream getNeighbourNode(){
-        return null;
-    }
+    void saveNeighbourNode(Integer key, OutputStream node){neighbourSockets.put(key, node);}
+
+    int notifyNeighbourAmount(){return neighbourSockets.size();}
+
+    void updateResources(Integer key, String message){resources.put(key ,message);}
+
+    String returnResource(Integer key){return resources.get(key);}
+
+    OutputStream getNeighbourNode(Integer key){return neighbourSockets.get(key);}
 
     public void main(String[] args){
         Node node = new Node();
