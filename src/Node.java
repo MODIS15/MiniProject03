@@ -18,9 +18,8 @@ public class Node {
     private ServerSocket putInputSocket;
     private ServerSocket neighbourInputSocket;
 
-
-
     private Map<Integer, String> resources;
+    private int port;
 
 
     /**
@@ -34,11 +33,11 @@ public class Node {
      * Constructor used to connect node in existing system
      *
      * @param ip   of node in a existing p2p system
-     * @param port of a node in a existing p2p system
+     * @param connectport of a node in a existing p2p system
      */
-    public Node(String ip, int port) {
+    public Node(String ip, int connectport) {
         try {
-            rewireLeftSocket(ip, port);
+            rewireLeftSocket(ip, connectport);
             initialize();
         } catch (NumberFormatException e) {
             System.out.println("Please enter valid IP and port of a node in the system.\n Exiting...");
@@ -47,9 +46,23 @@ public class Node {
     }
 
     private void initialize() {
-        resources = new HashMap<>();
-        try {
 
+        try {
+            int port = 0;
+            System.out.println("Input port for putPort:");
+            port = Integer.parseInt(System.console().readLine().trim());
+            putInputSocket = new ServerSocket(port);
+            System.out.println("Input port for getPort:");
+            port = Integer.parseInt(System.console().readLine().trim());
+            getInputSocket = new ServerSocket(port);
+            System.out.println("Input port for NodesPort:");
+            port = Integer.parseInt(System.console().readLine().trim());
+            neighbourInputSocket = new ServerSocket(port);
+        }
+        catch (IOException e){System.out.println(e.getStackTrace());}
+
+        resources = new HashMap<Integer, String>();
+        try {
 
             Runnable runnableNeighbour = this::listenForNewNeighbour;
             Runnable runnableGet = this::listenForGet;
@@ -86,11 +99,7 @@ public class Node {
      * @throws NumberFormatException
      */
     private void listenForPut() throws NumberFormatException {
-        System.out.println("Input port for putPort:");
-        int port = Integer.parseInt(System.console().readLine().trim());
         try {
-            putInputSocket = new ServerSocket(port);
-
             while (true) {
                 System.out.println("Waiting for connection from new put-client...");
                 Socket s = putInputSocket.accept();
@@ -115,10 +124,7 @@ public class Node {
      * @throws NumberFormatException
      */
     private void listenForGet() throws NumberFormatException {
-        System.out.println("Input port for getPort:");
-        int port = Integer.parseInt(System.console().readLine().trim());
         try {
-            getInputSocket = new ServerSocket(port);
             while (true) {
                 System.out.println("Waiting for connection from new get-client...");
                 Socket s = getInputSocket.accept();
@@ -142,13 +148,8 @@ public class Node {
      * @throws NumberFormatException
      */
     private void listenForNewNeighbour() throws NumberFormatException {
-
-        System.out.println("Input port for NodesPort:");
-        int neighbourInputPort = Integer.parseInt(System.console().readLine().trim());
-
         try {
             System.out.println("Waiting for connection from new node...");
-            neighbourInputSocket = new ServerSocket(neighbourInputPort);
 
             while (true) {
                 Socket s = neighbourInputSocket.accept();
@@ -179,6 +180,7 @@ public class Node {
         try {
             System.out.println("Waiting for connection from new node...");
             while (true) {
+                
                 if (leftSocket != null) {
                     ObjectInputStream input = new ObjectInputStream(leftSocket.getInputStream());
                     Object object = input.readObject();
@@ -406,8 +408,6 @@ public class Node {
 
 
         }
-
-
     }
 
     /**
