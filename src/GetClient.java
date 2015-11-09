@@ -86,9 +86,13 @@ public class GetClient {
             {
                 Socket socket = incomingFoundResourceSocket.accept();
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-                Object object = input.readObject();
 
-                handleIncomingResource(object);
+                if(input.readObject() != null)
+                {
+                    Object object = input.readObject();
+
+                    handleIncomingResource(object);
+                }
 
                 socket.close();
             }
