@@ -19,7 +19,6 @@ public class Node {
     private ServerSocket neighbourInputSocket;
 
     private Map<Integer, String> resources;
-    private int port;
 
 
     /**
@@ -37,13 +36,27 @@ public class Node {
      */
     public Node(String ip, int connectport) {
         try {
-            rewireLeftSocket(ip, connectport);
             initialize();
+            connectToExistingNode(ip, connectport);
         } catch (NumberFormatException e) {
             System.out.println("Please enter valid IP and port of a node in the system.\n Exiting...");
             System.exit(0);
         }
     }
+
+    public static void main(String[] args) {
+        try {
+            if (args.length == 0) {
+                Node node = new Node(); // Node this is not connected to any existing p2p-system
+            } else {
+                Node node = new Node(args[0], Integer.parseInt(args[1])); //Connect node to existing system
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter valid Port number.\nExiting...");
+        }
+    }
+
+    //Listeners
 
     private void initialize() {
 
@@ -90,8 +103,6 @@ public class Node {
 
 
     }
-
-    //Listeners
 
     /**
      * Listens for any incoming connection from put-clients.
@@ -173,6 +184,10 @@ public class Node {
         }
     }
 
+
+
+    //Connection methods
+
     /**
      * Listens for any incoming messages from right socket
      */
@@ -180,7 +195,7 @@ public class Node {
         try {
             System.out.println("Waiting for connection from new node...");
             while (true) {
-                
+
                 if (leftSocket != null) {
                     ObjectInputStream input = new ObjectInputStream(leftSocket.getInputStream());
                     Object object = input.readObject();
@@ -189,11 +204,11 @@ public class Node {
                         System.out.println("Received connect message from " + leftSocket.getInetAddress());
                         String ip = ((ConnectMessage) object).getIpAddress();
                         int port = ((ConnectMessage) object).getPort();
-                        rewireLeftSocket(ip, port);
+                        connectToExistingNode(ip, port);
                     } else if (object instanceof DisconnectMessage) {
                         if (((DisconnectMessage) object).getIsDisconnect()) {
                             System.out.println("Received disconnect message from " + leftSocket.getInetAddress());
-                            disconnectLeftSocket();
+                            disconnectSocket();
                         }
                     } else if (object instanceof PutMessage) {
                         System.out.println("Received propagated message from " + leftSocket.getInetAddress());
@@ -217,29 +232,16 @@ public class Node {
         }
     }
 
-    private void returnCapacityRequest(Socket s, CapacityMessage message) {
-        try {
-            message.setCapacity(resources.size());
-            ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
-            output.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    //Connection methods
-
     /**
      * Reconnect Leftsocket with a new node
      *
      * @param ip   of new node
      * @param port of new node
      */
-    private void rewireLeftSocket(String ip, int port) {
+    private void connectToExistingNode(String ip, int port) {
         try {
-            disconnectLeftSocket();
             leftSocket = new Socket(ip, port);
+            rightSocket = new Socket(ip,port);
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (UnknownHostException e) {
@@ -252,16 +254,20 @@ public class Node {
     /**
      * Disconnect connection on left socket.
      */
-    private void disconnectLeftSocket() {
+    private void disconnectSocket(Socket socket) {
         try {
-            if (leftSocket != null) {
-                leftSocket.close();
-                leftSocket = null;
+            if (socket != null) {
+                socket.close();
+                socket = null;
                 System.out.println("Disconnected");
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void connectSocket(Socket socket){
+        if( )
     }
 
     /**
@@ -270,18 +276,22 @@ public class Node {
      * @param node socket of incoming node
      */
     private void saveNeighbourNode(Socket node) {
-        if (leftSocket == null) {
-            leftSocket = node;
-            System.out.println("Left socket connected to " + node.getInetAddress());
-
-        } else if (rightSocket == null) {
+        if (rightSocket == null) {
             rightSocket = node;
             System.out.println("Right socket connected to " + node.getInetAddress());
-        } else {
+        }
+
+        else if (leftSocket == null) {
+            leftSocket = node;
+            System.out.println("Left socket connected to " + node.getInetAddress());
+        }
+
+        else {
             try {
-                System.out.println("Sockets full.\nRMerging and rewiring incoming node...");
+                System.out.println("Sockets full.\nMerging and rewiring incoming node...");
                 ConnectMessage connectMessage = new ConnectMessage(rightSocket.getInetAddress().toString(), rightSocket.getPort());
                 sendDisconnectMessage(rightSocket);
+                disconnectSocket(rightSocket);
 
                 if (!rightSocket.isClosed()) rightSocket.close();
                 rightSocket = node;
@@ -338,38 +348,23 @@ public class Node {
         }
     }
 
+    private int requestCapacity(Socket socket)
 
-    private int requestCapacity(Socket socket) {
-        try {
-
-            System.out.println("Sending capacity request to neighbour...");
-
-            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-            output.writeObject(new CapacityMessage());
-            System.out.println("Request sent.");
-
-            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-            Object message = input.readObject();
-
-            if(message instanceof CapacityMessage) {
-                return ((CapacityMessage) message).getCapacity();
-            }
-            else return -1;
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return -1;
-    }
 
 
 
 
     //PutClient methods
+
+    private void returnCapacityRequest(Socket s, CapacityMessage message) {
+        try {
+            message.setCapacity(resources.size());
+            ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
+            output.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Handle putmessage by either storing its resource or propagating it
@@ -420,6 +415,12 @@ public class Node {
         System.out.println("Ressource stored.");
     }
 
+
+
+
+
+    //GetClient methods
+
     /**
      * Check if key exists in node
      *
@@ -429,12 +430,6 @@ public class Node {
     private boolean isKeyAvailable(PutMessage message) {
         return !resources.containsKey(message.getKey());
     }
-
-
-
-
-
-    //GetClient methods
 
     /**
      * Handle getMessage by checking if requested resource is in this node. Else propagate.
@@ -468,18 +463,6 @@ public class Node {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-            if (args.length == 0) {
-                Node node = new Node(); // Node this is not connected to any existing p2p-system
-            } else {
-                Node node = new Node(args[0], Integer.parseInt(args[1])); //Connect node to existing system
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Please enter valid Port number.\nExiting...");
         }
     }
 }
