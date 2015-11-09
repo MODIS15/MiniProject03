@@ -9,11 +9,13 @@ import java.util.regex.Pattern;
 public class PutClient {
 
     public PutClient() {
-        sendMessage();
+        while (true)
+        {
+            sendMessage();
+        }
     }
 
     public static void main(String[] args) {
-
         PutClient put = new PutClient();
     }
 
@@ -21,7 +23,7 @@ public class PutClient {
      * Insert resource into existing p2p system
      */
     private void sendMessage() {
-        while (true) {
+
             try {
                 System.out.println("Enter ip for node: ");
                 String ip = System.console().readLine();
@@ -33,6 +35,7 @@ public class PutClient {
                 int key = input.hashCode();
                 System.out.println("Key of resource: "+key);
                 PutMessage message = new PutMessage(key, input);
+                System.out.println();
 
                 Socket s = new Socket(ip, Integer.parseInt(port));
                 ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
@@ -42,6 +45,7 @@ public class PutClient {
 
                 System.out.println("Message Putted\n" +
                         "///////////Resetting///////////");
+                System.out.println();
 
 
             } catch (UnknownHostException e) {
@@ -49,9 +53,6 @@ public class PutClient {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-
-
     }
 }
 
