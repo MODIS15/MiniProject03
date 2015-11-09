@@ -7,6 +7,9 @@
 *.jar
 *.war
 *.ear
+*.xml
+*.name
+*.iml
 
 dir_to_ignore/.idea
 
