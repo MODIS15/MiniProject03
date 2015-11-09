@@ -202,7 +202,10 @@ public class Node {
                         handleGetInput((GetMessage) object, rightSocket);
                     }
                     else if (object instanceof CapacityMessage){
-                        handleCapacityRequest(leftSocket, (CapacityMessage) object);
+                        if(!((CapacityMessage) object).isSet())
+                        {
+                            returnCapacityRequest(leftSocket, (CapacityMessage) object);
+                        }
                     }
                 }
             }
@@ -213,11 +216,11 @@ public class Node {
         }
     }
 
-    private void handleCapacityRequest(Socket s, CapacityMessage message) {
+    private void returnCapacityRequest(Socket s, CapacityMessage message) {
         try {
             message.setCapacity(resources.size());
             ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
-            output.close(); //TODO CHECK CONFLICT
+            output.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -320,7 +323,7 @@ public class Node {
     }
 
     /**
-     * Propagte a given message to the right neighbour.
+     * Propagate a given message to a neighbour.
      *
      * @param message
      */
@@ -335,46 +338,35 @@ public class Node {
     }
 
 
-    private void requestCapacity() {
+    private int requestCapacity(Socket socket) {
         try {
-            ObjectOutputStream outLeft;
-            ObjectOutputStream outRight;
-            System.out.println("Sending capacity request to neighbours...");
 
+            System.out.println("Sending capacity request to neighbour...");
 
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+            output.writeObject(new CapacityMessage());
+            System.out.println("Request sent.");
 
-            if(rightSocket == null && leftSocket == null){
-                throw new NullPointerException("First node");
+            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+            Object message = input.readObject();
+
+            if(message instanceof CapacityMessage) {
+                return ((CapacityMessage) message).getCapacity();
             }
-
-            else if (rightSocket == null) {
-                outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
-                outLeft.writeObject(new CapacityMessage());
-
-
-            }
-            else if (leftSocket == null) {
-                outRight = new ObjectOutputStream(rightSocket.getOutputStream());
-                outRight.writeObject(new CapacityMessage());
-
-            }
-            else {
-                outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
-                outLeft.writeObject(new CapacityMessage());
-
-
-                outRight = new ObjectOutputStream(rightSocket.getOutputStream());
-                outRight.writeObject(new CapacityMessage());
-            }
+            else return -1;
 
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
 
-        System.out.println("Request sent.");
-
+        return -1;
     }
+
+
+
 
     //PutClient methods
 
@@ -386,7 +378,14 @@ public class Node {
      */
     private void handlePutInput(PutMessage message, Socket socket) {
 
-        System.out.println("Handling incoming ressource...");
+        System.out.println("Handling incoming resource...");
+
+        if(rightSocket != null && leftSocket != null){
+            int rightCapacity = requestCapacity(rightSocket);
+            int leftCapacity = requestCapacity(rightSocket);
+        }
+
+
         if (isKeyAvailable(message)) {
             saveResource(message);
         } else propagateMessage(message, socket);
@@ -411,6 +410,10 @@ public class Node {
     private boolean isKeyAvailable(PutMessage message) {
         return !resources.containsKey(message.getKey());
     }
+
+
+
+
 
     //GetClient methods
 
