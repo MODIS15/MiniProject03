@@ -50,30 +50,30 @@ public class GetClient {
      */
     private void getResource(String request)
     {
+        try
+        {
         while(true)
         {
-            try
-            {
-                    String[] splitRequest = request.split(" ");
+            String[] splitRequest = request.split(" ");
 
-                    int key = Integer.parseInt(splitRequest[1]);
-                    String ip = splitRequest[2];
-                    int port = Integer.parseInt(splitRequest[3]);
+                int key = Integer.parseInt(splitRequest[1]);
+                String ip = splitRequest[2];
+                int port = Integer.parseInt(splitRequest[3]);
 
-                    GetMessage message = new GetMessage(key, ip, port);
+                GetMessage message = new GetMessage(key, ip, port);
 
-                    Socket s = new Socket(ip, port);
-                    ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
-                    output.writeObject(message);
+                Socket s = new Socket(ip, port);
+                ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
+                output.writeObject(message);
 
-                    output.close();
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-                System.out.println("The host could not be found");
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("An IOException occurred when creating the socket");
+                output.close();
             }
+        }catch (UnknownHostException e) {
+            e.printStackTrace();
+            System.out.println("The host could not be found");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("An IOException occurred when creating the socket");
         }
     }
 
@@ -95,15 +95,12 @@ public class GetClient {
      */
     private void listenForIncomingResources()
     {
-        while(true)
-        {
-            try
-            {
+        try {
+            while (true) {
                 Socket socket = incomingFoundResourceSocket.accept();
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 
-                if(input.readObject() != null)
-                {
+                if (input.readObject() != null) {
                     Object object = input.readObject();
 
                     handleIncomingResource(object);
@@ -111,16 +108,16 @@ public class GetClient {
 
                 socket.close();
             }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-                System.out.println("An IOException occurred when creating the socket");
-            }
-            catch (ClassNotFoundException e)
-            {
-                e.printStackTrace();
-                System.out.println("The class of the serialized Object from ObjectInputStream could not be determined");
-            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+            System.out.println("An IOException occurred when creating the socket");
+        }
+        catch (ClassNotFoundException e)
+        {
+            e.printStackTrace();
+            System.out.println("The class of the serialized Object from ObjectInputStream could not be determined");
         }
     }
 
