@@ -56,9 +56,9 @@ public class GetClient {
             {
                     String[] splitRequest = request.split(" ");
 
-                    int key = Integer.parseInt(splitRequest[2]);
-                    String ip = splitRequest[3];
-                    int port = Integer.parseInt(splitRequest[4]);
+                    int key = Integer.parseInt(splitRequest[1]);
+                    String ip = splitRequest[2];
+                    int port = Integer.parseInt(splitRequest[3]);
 
                     GetMessage message = new GetMessage(key, ip, port);
 
@@ -151,6 +151,7 @@ public class GetClient {
     public static void main(String[] args) {
         try
         {
+            System.out.println("Please input the port for your GetClient");
             int port = Integer.parseInt(System.console().readLine());
             GetClient get = new GetClient(port);
         }

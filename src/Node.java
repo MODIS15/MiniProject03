@@ -47,7 +47,7 @@ public class Node {
     }
 
     private void initialize() {
-        resources = new HashMap<Integer, String>();
+        resources = new HashMap<>();
         try {
 
 
@@ -177,9 +177,8 @@ public class Node {
      */
     private void listenLeftSocket() {
         try {
-
+            System.out.println("Waiting for connection from new node...");
             while (true) {
-                System.out.println("Waiting for connection from new node...");
                 if (leftSocket != null) {
                     ObjectInputStream input = new ObjectInputStream(leftSocket.getInputStream());
                     Object object = input.readObject();
