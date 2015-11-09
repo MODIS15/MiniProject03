@@ -1,5 +1,6 @@
 import Messages.GetMessage;
 import Messages.PutMessage;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -7,6 +8,8 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GetClient {
 
@@ -52,19 +55,22 @@ public class GetClient {
         {
             try
             {
-                String[] splitRequest = request.split(" ");
+                if(isValid(request))
+                {
+                    String[] splitRequest = request.split(" ");
 
-                int key = Integer.parseInt(splitRequest[2]);
-                String ip = splitRequest[3];
-                int port = Integer.parseInt(splitRequest[4]);
+                    int key = Integer.parseInt(splitRequest[2]);
+                    String ip = splitRequest[3];
+                    int port = Integer.parseInt(splitRequest[4]);
 
-                GetMessage message = new GetMessage(key, ip, port);
+                    GetMessage message = new GetMessage(key, ip, port);
 
-                Socket s = new Socket(ip, port);
-                ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
-                output.writeObject(message);
+                    Socket s = new Socket(ip, port);
+                    ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
+                    output.writeObject(message);
 
-                output.close();
+                    output.close();
+                }
             } catch (UnknownHostException e) {
                 e.printStackTrace();
                 System.out.println("The host could not be found");
@@ -73,6 +79,19 @@ public class GetClient {
                 System.out.println("An IOException occurred when creating the socket");
             }
         }
+    }
+
+    /**
+     * Validates a get message request String.
+     * @param input: User get request from console
+     * @return
+     */
+    private boolean isValid(String input)
+    {
+        //Pattern structure: get message "key" "ip" "port"
+        Pattern pattern = Pattern.compile("(get message [0-9] [\\w] [0-9])");
+        return pattern.matcher(input).matches();
+
     }
 
     /**
