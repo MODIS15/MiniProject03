@@ -382,13 +382,33 @@ public class Node {
 
         if(rightSocket != null && leftSocket != null){
             int rightCapacity = requestCapacity(rightSocket);
-            int leftCapacity = requestCapacity(rightSocket);
+            int leftCapacity = requestCapacity(leftSocket);
+            int lowestCapacity;
+            Socket lowestNeighbour;
+
+
+            if(rightCapacity <= leftCapacity){
+                lowestNeighbour = rightSocket;
+                lowestCapacity = rightCapacity;
+            }
+            else {
+                lowestNeighbour = leftSocket;
+                lowestCapacity = leftCapacity;
+            }
+
+            if(resources.size() <= lowestCapacity){
+
+                if (isKeyAvailable(message)) {
+                    saveResource(message);
+                    System.out.println("Stored resource");
+                } else propagateMessage(message, lowestNeighbour);
+            }
+            else propagateMessage(message, lowestNeighbour);
+
+
         }
 
 
-        if (isKeyAvailable(message)) {
-            saveResource(message);
-        } else propagateMessage(message, socket);
     }
 
     /**
