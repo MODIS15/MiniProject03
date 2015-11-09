@@ -8,8 +8,8 @@ Along with implementations and answers to questions listed below, your submissio
 Part A. You must implement the following three kinds of processes, potentially running at distinct machines.
 
 A "Node" process takes as arguments a local port and optionally the IP/port of another Node process. The Node then listens for PUT and GET requests on its local port. NB! "PUT" and "GET" are here just informal message types; they are not necessarily HTTP request verbs.
-A "Put-client" process takes as arguments the IP/port of a Node, an integer key, and a string value. The client then submits a PUT(key, value) message to the indicated node and terminates.
-A "Get-client" process takes arguments the IP/port of a Node, and an integer key. It submits a GET(key, ip2, port2) message to the indicated Node, then listens on ip2/port2 for a PUT(key, value) message, which, if it arrives, indicates that the Node network has stored the association (key, value), that is, that some Put-client previously issued that PUT.
+A "PutClient-client" process takes as arguments the IP/port of a Node, an integer key, and a string value. The client then submits a PUT(key, value) message to the indicated node and terminates.
+A "GetClient-client" process takes arguments the IP/port of a Node, and an integer key. It submits a GET(key, ip2, port2) message to the indicated Node, then listens on ip2/port2 for a PUT(key, value) message, which, if it arrives, indicates that the Node network has stored the association (key, value), that is, that some PutClient-client previously issued that PUT.
 If the network of Nodes receives inconsistent PUTs, (e.g., PUT(1, A) then later PUT(1, B)), the value of subsequent GETs is undefined (i.e., no answer, PUT(1, A) and PUT(1, B) are all valid results.).
 
 Example execution. (We have omitted IP addresses for brevity.)

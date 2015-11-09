@@ -5,14 +5,14 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class Put {
+public class PutClient {
 
-    public Put() {
+    public PutClient() {
         sendMessage();
     }
 
     public static void main(String[] args) {
-        Put put = new Put();
+        PutClient put = new PutClient();
     }
 
     /**

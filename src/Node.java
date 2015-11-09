@@ -102,7 +102,7 @@ public class Node {
             while (true) {
                 System.out.println("Waiting for connection from new put-client...");
                 Socket s = putInputSocket.accept();
-                System.out.println("Connection from Put-client: " + s.getInetAddress() + " was established.");
+                System.out.println("Connection from PutClient-client: " + s.getInetAddress() + " was established.");
                 ObjectInputStream input = new ObjectInputStream(s.getInputStream());
 
                 handlePutInput((PutMessage) input.readObject(), s);
@@ -130,7 +130,7 @@ public class Node {
             while (true) {
                 System.out.println("Waiting for connection from new get-client...");
                 Socket s = getInputSocket.accept();
-                System.out.println("Connection from Get-client: " + s.getInetAddress() + " was established.");
+                System.out.println("Connection from GetClient-client: " + s.getInetAddress() + " was established.");
                 ObjectInputStream input = new ObjectInputStream(s.getInputStream());
 
                 handleGetInput((GetMessage) input.readObject(), s);
@@ -377,7 +377,7 @@ public class Node {
 
     }
 
-    //Put methods
+    //PutClient methods
 
     /**
      * Handle putmessage by either storing its resource or propagating it
@@ -413,7 +413,7 @@ public class Node {
         return !resources.containsKey(message.getKey());
     }
 
-    //Get methods
+    //GetClient methods
 
     /**
      * Handle getMessage by checking if requested resource is in this node. Else propagate.
@@ -429,7 +429,7 @@ public class Node {
     }
 
     /**
-     * Sends a resource in node to Get-client
+     * Sends a resource in node to GetClient-client
      *
      * @param message GetMessage
      */
