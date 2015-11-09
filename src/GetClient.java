@@ -30,11 +30,13 @@ public class GetClient {
         Runnable incoming = this::listenForIncomingResources;
         Thread incomingTread = new Thread(incoming);
         incomingTread.start();
+        System.out.println("Use the following syntax for creating a getMessage:");
+        System.out.println("\"getmessage\" key ip port");
 
         while(true)
         {
             String request = System.console().readLine().toLowerCase().trim();
-            if(request.startsWith("get message"))
+            if(isValid(request))
             {
                 getResource(request);
             }
@@ -52,8 +54,6 @@ public class GetClient {
         {
             try
             {
-                if(isValid(request))
-                {
                     String[] splitRequest = request.split(" ");
 
                     int key = Integer.parseInt(splitRequest[2]);
@@ -67,7 +67,6 @@ public class GetClient {
                     output.writeObject(message);
 
                     output.close();
-                }
             } catch (UnknownHostException e) {
                 e.printStackTrace();
                 System.out.println("The host could not be found");
@@ -79,13 +78,13 @@ public class GetClient {
     }
 
     /**
-     * Validates a get message request String.
+     * Validates a getmessage request String.
      * @param input: User get request from console
      * @return
      */
     private boolean isValid(String input)
     {
-        //Pattern structure: get message "key" "ip" "port"
+        //Pattern structure: getmessage "key" "ip" "port"
         Pattern pattern = Pattern.compile("(getmessage [0-9]* [\\w.]* [0-9]*)");
         return pattern.matcher(input).matches();
 
@@ -137,9 +136,12 @@ public class GetClient {
         String message = "";
         if(object.getClass().isInstance(message))
         {
+            System.out.println();
             message = object.toString();
             System.out.println(message);
         }
+        else
+            System.out.println("The requested message could not be displayed");
     }
 
     /**
