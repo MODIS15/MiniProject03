@@ -242,7 +242,7 @@ public class Node {
     }
 
     /**
-     * Disconnect connection on left node.
+     * Disconnect connection on left socket.
      */
     private void disconnectLeftSocket() {
         try {
@@ -257,7 +257,7 @@ public class Node {
     }
 
     /**
-     * Saving new incoming nodes. If left and right sockets are occupied, rewire connecten.
+     * Saving new incoming nodes. If left and right sockets are occupied, rewire connection.
      *
      * @param node socket of incoming node
      */
