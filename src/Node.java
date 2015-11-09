@@ -334,48 +334,22 @@ public class Node {
         }
     }
 
-    /**
-     * Used to notify neighbours of current capacity of this node.
-     */
-    private void notifyCapacity() {
-        try {
-            ObjectOutputStream right = new ObjectOutputStream(rightSocket.getOutputStream());
-            ObjectOutputStream left = new ObjectOutputStream(leftSocket.getOutputStream());
 
-            //TODO MAYBE WE HAVE TO CREATE A NEW MESSAGE OR ADD CAPACITY TYPE IN UTILITYMESSAGE
-            right.write(resources.size());
-            left.write(resources.size());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private int[] requestCapacity() {
+    private void requestCapacity() {
         try {
             ObjectOutputStream outLeft;
-            ObjectInputStream inLeft;
             ObjectOutputStream outRight;
-            ObjectInputStream inRight;
-            int[] capacities = new int[2];
+            System.out.println("Sending capacity request to neighbours...");
 
 
 
             if(rightSocket == null && leftSocket == null){
-                capacities[0]= -1;
-                capacities[1]= -1;
-
+                throw new NullPointerException("First node");
             }
 
             else if (rightSocket == null) {
                 outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
                 outLeft.writeObject(new CapacityMessage());
-
-                inLeft = new ObjectInputStream(leftSocket.getInputStream());
-                CapacityMessage leftCapacity = (CapacityMessage) inLeft.readObject(); //TODO Check if this is a blocking call
-                capacities[0] = leftCapacity.getCapacity();
-                capacities[1] = -1;
 
 
             }
@@ -383,38 +357,22 @@ public class Node {
                 outRight = new ObjectOutputStream(rightSocket.getOutputStream());
                 outRight.writeObject(new CapacityMessage());
 
-                inRight = new ObjectInputStream(rightSocket.getInputStream());
-                CapacityMessage rightCapacity = (CapacityMessage) inRight.readObject(); //TODO Check if this is a blocking call
-                capacities[1] = rightCapacity.getCapacity();
-                capacities[0] = -1;
-
             }
             else {
                 outLeft = new ObjectOutputStream(leftSocket.getOutputStream());
                 outLeft.writeObject(new CapacityMessage());
 
-                inLeft = new ObjectInputStream(leftSocket.getInputStream());
-                CapacityMessage leftCapacity = (CapacityMessage) inLeft.readObject(); //TODO Check if this is a blocking call
-                capacities[0] = leftCapacity.getCapacity();
 
                 outRight = new ObjectOutputStream(rightSocket.getOutputStream());
                 outRight.writeObject(new CapacityMessage());
-
-                inRight = new ObjectInputStream(rightSocket.getInputStream());
-                CapacityMessage rightCapacity = (CapacityMessage) inRight.readObject(); //TODO Check if this is a blocking call
-                capacities[1] = rightCapacity.getCapacity();
             }
-            return capacities;
 
 
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
 
-        return null;
-
+        System.out.println("Request sent.");
 
     }
 
@@ -427,12 +385,10 @@ public class Node {
      * @param socket
      */
     private void handlePutInput(PutMessage message, Socket socket) {
-        int[] capacities = requestCapacity();
 
         System.out.println("Handling incoming ressource...");
         if (isKeyAvailable(message)) {
             saveResource(message);
-            notifyCapacity();
         } else propagateMessage(message, socket);
     }
 
