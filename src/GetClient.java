@@ -1,6 +1,4 @@
 import Messages.GetMessage;
-import Messages.PutMessage;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GetClient {
@@ -142,6 +139,23 @@ public class GetClient {
         {
             message = object.toString();
             System.out.println(message);
+        }
+    }
+
+    /**
+     * Main method
+     * @param args
+     */
+    public static void main(String[] args) {
+        try
+        {
+            int port = Integer.parseInt(System.console().readLine());
+            GetClient get = new GetClient(port);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            System.out.println("An IOException occurred when creating the socket for the GetClient");
         }
     }
 }
