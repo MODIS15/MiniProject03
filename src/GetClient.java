@@ -86,7 +86,7 @@ public class GetClient {
     private boolean isValid(String input)
     {
         //Pattern structure: get message "key" "ip" "port"
-        Pattern pattern = Pattern.compile("(get message [0-9] [\\w] [0-9])");
+        Pattern pattern = Pattern.compile("(getmessage [0-9]* [\\w.]* [0-9]*)");
         return pattern.matcher(input).matches();
 
     }
