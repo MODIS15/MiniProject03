@@ -166,7 +166,7 @@ public class Node {
                 Socket s = neighbourInputSocket.accept();
                 System.out.println("Connection from new node: " + s.getInetAddress() + " was established.");
 
-                saveNeighbourNode(s);
+                connectRightSocket(s);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -177,13 +177,42 @@ public class Node {
      * Listens for any incoming messages from right socket
      */
     private void listenRightSocket() {
+        try {
+            ObjectInputStream input = null;
+            input = new ObjectInputStream(rightSocket.getInputStream());
+
         while (true) {
             if (rightSocket != null) {
-                //TODO listen for any capacity updates
+                    Object object = input.readObject();
+                    if (object instanceof ConnectMessage) {
+                        System.out.println("Received connect message from " + rightSocket.getInetAddress());
+                        handleConnectMessage((ConnectMessage) object);
+                    }
+                }
             }
         }
+        catch (IOException e) {e.printStackTrace();} catch (ClassNotFoundException e) {e.printStackTrace();}
     }
 
+    private void handleConnectMessage(ConnectMessage message) throws IOException {
+        if(!message.isNewJoin())
+        {
+            if(!rightSocket.isClosed())
+                rightSocket.close();
+
+            rightSocket = null;
+            rightSocket = new Socket(message.getIpAddress(), message.getPort());
+        }
+        if(leftSocket==null){
+            leftSocket = new Socket(message.getIpAddress(),message.getPort());
+        }
+        else
+        {
+            message.setIsNewJoin(false);
+            sendConnectMessage(message,leftSocket);
+            leftSocket.close();
+        }
+    }
 
 
     //Connection methods
@@ -201,19 +230,18 @@ public class Node {
                     Object object = input.readObject();
 
                     if (object instanceof ConnectMessage) {
-                        System.out.println("Received connect message from " + leftSocket.getInetAddress());
-                        String ip = ((ConnectMessage) object).getIpAddress();
-                        int port = ((ConnectMessage) object).getPort();
-                        connectToExistingNode(ip, port);
-                    } else if (object instanceof DisconnectMessage) {
+                        System.out.println("Received connect message from " + leftSocket.getInetAddress()+"\nNot implemented");
+                    }
+                    else if (object instanceof DisconnectMessage) {
                         if (((DisconnectMessage) object).getIsDisconnect()) {
-                            System.out.println("Received disconnect message from " + leftSocket.getInetAddress());
-                            disconnectSocket();
+                            System.out.println("Received disconnect message from " + leftSocket.getInetAddress()+"\nNot implemented");
                         }
-                    } else if (object instanceof PutMessage) {
+                    }
+                    else if (object instanceof PutMessage) {
                         System.out.println("Received propagated message from " + leftSocket.getInetAddress());
                         handlePutInput((PutMessage) object, rightSocket);
-                    } else if (object instanceof GetMessage) {
+                    }
+                    else if (object instanceof GetMessage) {
                         System.out.println("Received get propagated request from " + leftSocket.getInetAddress());
                         handleGetInput((GetMessage) object, rightSocket);
                     }
@@ -241,7 +269,7 @@ public class Node {
     private void connectToExistingNode(String ip, int port) {
         try {
             leftSocket = new Socket(ip, port);
-            rightSocket = new Socket(ip,port);
+            sendConnectMessage(new ConnectMessage(rightSocket.getInetAddress().toString(),rightSocket.getPort()),leftSocket);
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (UnknownHostException e) {
@@ -266,59 +294,19 @@ public class Node {
         }
     }
 
-    private void connectSocket(Socket socket){
-        if( )
-    }
 
     /**
      * Saving new incoming nodes. If left and right sockets are occupied, rewire connection.
      *
      * @param node socket of incoming node
      */
-    private void saveNeighbourNode(Socket node) {
+    private void connectRightSocket(Socket node) {
         if (rightSocket == null) {
             rightSocket = node;
             System.out.println("Right socket connected to " + node.getInetAddress());
         }
-
-        else if (leftSocket == null) {
-            leftSocket = node;
-            System.out.println("Left socket connected to " + node.getInetAddress());
-        }
-
-        else {
-            try {
-                System.out.println("Sockets full.\nMerging and rewiring incoming node...");
-                ConnectMessage connectMessage = new ConnectMessage(rightSocket.getInetAddress().toString(), rightSocket.getPort());
-                sendDisconnectMessage(rightSocket);
-                disconnectSocket(rightSocket);
-
-                if (!rightSocket.isClosed()) rightSocket.close();
-                rightSocket = node;
-                sendConnectMessage(connectMessage, node);
-                System.out.println("Rewiring done.");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
     }
 
-    /**
-     * Sends a disconnect message to neighbour node.
-     * Used for rewiring
-     *
-     * @param node socket to node
-     * @throws IOException
-     */
-    private void sendDisconnectMessage(Socket node) throws IOException {
-        DisconnectMessage message = new DisconnectMessage();
-        message.setDisconnect(true);
-        ObjectOutputStream output = new ObjectOutputStream(node.getOutputStream());
-
-        output.writeObject(message);
-    }
 
     /**
      * Send ConnectMessage containing information of another node.
@@ -348,8 +336,10 @@ public class Node {
         }
     }
 
-    private int requestCapacity(Socket socket)
-
+    private int requestCapacity(Socket socket){
+        System.out.println("Request Capacity not implemented");
+        return 0;
+    }
 
 
 
