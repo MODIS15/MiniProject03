@@ -178,11 +178,10 @@ public class Node {
      */
     private void listenRightSocket() {
         try {
-            ObjectInputStream input = null;
-            input = new ObjectInputStream(rightSocket.getInputStream());
-
         while (true) {
             if (rightSocket != null) {
+                ObjectInputStream input = null;
+                input = new ObjectInputStream(rightSocket.getInputStream());
                     Object object = input.readObject();
                     if (object instanceof ConnectMessage) {
                         System.out.println("Received connect message from " + rightSocket.getInetAddress());
