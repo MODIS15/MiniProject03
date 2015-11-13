@@ -69,9 +69,9 @@ public class Node {
             Thread listenServerSocket = new Thread(runnableServerSocket);
             Thread listenRight = new Thread(runnableRight);
             resources = new HashMap<Integer, String>();
-            int port = 0;
 
             System.out.println("Input port for incomming connections:");
+            int port;
             port = Integer.parseInt(System.console().readLine().trim());
             serverSocket = new ServerSocket(port);
             listenServerSocket.start();
