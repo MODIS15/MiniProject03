@@ -44,12 +44,20 @@ public class Node {
     }
 
     public static void main(String[] args) {
-
         try {
-            if (args.length == 0) {
-                Node node = new Node(); // Node this is not connected to any existing p2p-system
-            } else {
-                Node node = new Node(args[0], Integer.parseInt(args[1])); //Connect node to existing system
+        System.out.println("Welcome to NodeHax \n" +
+                "To connect to an existing server enter the ip else just press 'enter'");
+
+        String ip = System.console().readLine();
+        if(ip.isEmpty())
+        {
+            Node node = new Node(); // Node this is not connected to any existing p2p-system
+        }
+        else
+        {
+            System.out.println("Now enter port for the existing node.");
+            String port = System.console().readLine();
+            Node node = new Node(ip,Integer.parseInt(port)); //Connect node to existing system
             }
         } catch (NumberFormatException e) {
             System.out.println("Please enter valid Port number.\nExiting...");
