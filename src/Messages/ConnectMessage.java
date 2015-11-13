@@ -2,7 +2,7 @@ package Messages;
 
 import java.io.Serializable;
 
-public class ConnectMessage implements Serializable{
+public class ConnectMessage extends Message implements Serializable{
 
     private String ipAddress;
     private int port;
@@ -10,6 +10,7 @@ public class ConnectMessage implements Serializable{
 
     public ConnectMessage(String ip, int port)
     {
+        super(MessageTypeEnum.ConnectMessage);
         this.ipAddress = ip;
         this.port = port;
         isNewJoin = true;

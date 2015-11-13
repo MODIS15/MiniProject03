@@ -2,11 +2,11 @@ package Messages;
 
 import java.io.Serializable;
 
-public class DisconnectMessage implements Serializable{
+public class DisconnectMessage extends Message implements Serializable{
     private boolean isDisconnect = false;
     //Possible for future extensions
 
-    public DisconnectMessage(){}
+    public DisconnectMessage(){super(MessageTypeEnum.DisconnectMessage);}
 
     public void setDisconnect(boolean bool){
         isDisconnect = bool;
