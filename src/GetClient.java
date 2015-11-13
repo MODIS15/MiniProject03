@@ -71,6 +71,7 @@ public class GetClient {
         }catch (UnknownHostException e) {
             e.printStackTrace();
             System.out.println("The host could not be found");
+            System.out.println();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("An IOException occurred when creating the socket");
