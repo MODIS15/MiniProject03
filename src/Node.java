@@ -198,6 +198,7 @@ public class Node {
      */
     private void connectToExistingNode(String ip, int port) {
         try {
+            System.out.println("Connecting to" + ip+ " " + port);
             leftSocket = new Socket(ip, port);
             sendMessage(new ConnectMessage(rightSocket.getInetAddress().toString(),rightSocket.getPort()),leftSocket);
         } catch (SocketException e) {
