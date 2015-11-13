@@ -44,6 +44,7 @@ public class Node {
     }
 
     public static void main(String[] args) {
+
         try {
             if (args.length == 0) {
                 Node node = new Node(); // Node this is not connected to any existing p2p-system
