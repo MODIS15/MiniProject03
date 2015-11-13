@@ -44,7 +44,6 @@ public class Node {
     }
 
     public static void main(String[] args) {
-
         try {
             if (args.length == 0) {
                 Node node = new Node(); // Node this is not connected to any existing p2p-system
@@ -271,7 +270,10 @@ public class Node {
         try {
             System.out.println("Connecting to" + ip+ " " + port);
             leftSocket = new Socket(ip, port);
-            sendConnectMessage(new ConnectMessage(rightSocket.getInetAddress().toString(),rightSocket.getPort()),leftSocket);
+            System.out.println(rightSocket.getInetAddress().toString());
+            System.out.println(rightSocket.getPort());
+
+            sendConnectMessage(new ConnectMessage(rightSocket.getInetAddress().toString(), rightSocket.getPort()), leftSocket);
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (UnknownHostException e) {
