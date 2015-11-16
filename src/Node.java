@@ -26,7 +26,7 @@ public class Node {
      * Constructor used when creating node in non existing system
      */
     public Node() {
-        initialize();
+        initialize(true);
     }
 
     /**
@@ -37,7 +37,7 @@ public class Node {
     public Node(String ip, int connectport) {
         try
         {
-            initialize();
+            initialize(false);
             connectToExistingNode(ip, connectport);
         }
         catch (NumberFormatException e) {
@@ -75,7 +75,7 @@ public class Node {
 
 
 
-    private void initialize() {
+    private void initialize(boolean isFirst) {
         try {
             Runnable runnableServerSocket = this::listenServerSocket;
             Runnable runnableEcho = this::initiateEcho;
@@ -89,17 +89,22 @@ public class Node {
             if (scanner.hasNext()) {
                 port = Integer.parseInt(scanner.next());
                 serverSocket = new ServerSocket(port);
+                if(isFirst)
+                {
+                    leftSocket = new SocketInfo(serverSocket.getInetAddress().getLocalHost().getHostAddress(),serverSocket.getLocalPort());
+                    rightSocket = leftSocket;
+                }
                 listenServerSocket.start();
                 echoThread.start();
             } else {
                 System.out.println("Please enter a port... retrying.");
-                initialize();
+                initialize(isFirst);
             }
         }
         catch (IOException e){System.out.println(e.getStackTrace());}
         catch (NumberFormatException e) {
             System.out.println("Invalid Port");
-            initialize();
+            initialize(isFirst);
         }
     }
 
@@ -158,6 +163,7 @@ public class Node {
                 break;
             case EchoMessage:
                 handleEchoMessage((EchoMessage) message);
+                break;
             default:
                 System.out.println("Message Type not recognized...");
                 break;
@@ -199,10 +205,11 @@ public class Node {
         {
             if(!message.IsAlive()){
             message.setIsAlive(true);
-                System.out.println("received Echo message from: "+);
+                System.out.println("received Echo message from: "+ rightSocket.getIp()+" "+rightSocket.getPort());
                 sendMessage(message, rightSocket.getConnectableSocket());
             }
             else{
+                System.out.println(leftSocket.getIp()+" "+leftSocket.getPort()+" Is alive");
                 interruptEcho();
                 initiateEcho();
             }
@@ -219,6 +226,7 @@ public class Node {
                 sendMessage(new EchoMessage(), leftSocket.getConnectableSocket());
                 System.out.println("Sending Echo to: "+leftSocket.getIp() +" "+leftSocket.getPort());
                 echoThread.sleep(5000);
+                System.out.println("ALERT TIMEOUT!\nReconnecting leftsocket");
                 reconstructSystem();
 
             }
