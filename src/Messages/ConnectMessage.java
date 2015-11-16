@@ -6,16 +6,28 @@ public class ConnectMessage extends Message implements Serializable{
 
     private String ipAddress;
     private int port;
-    private boolean isNewJoin;
+    private boolean isNewConnection;
 
+
+    protected ConnectMessage() {
+        super(MessageTypeEnum.ConnectMessage);
+    }
     public ConnectMessage(String ip, int port)
     {
         super(MessageTypeEnum.ConnectMessage);
         this.ipAddress = ip;
         this.port = port;
-        isNewJoin = true;
+        this.isNewConnection = true;
     }
 
+
+    public boolean isNewConnection() {
+        return isNewConnection;
+    }
+
+    public void setNewConnection(boolean isNewConnection) {
+        this.isNewConnection = isNewConnection;
+    }
 
     public String getIpAddress() {
         return ipAddress;
@@ -25,11 +37,5 @@ public class ConnectMessage extends Message implements Serializable{
         return port;
     }
 
-    public boolean isNewJoin() {
-        return isNewJoin;
-    }
 
-    public void setIsNewJoin(boolean isNewJoin) {
-        this.isNewJoin = isNewJoin;
-    }
 }

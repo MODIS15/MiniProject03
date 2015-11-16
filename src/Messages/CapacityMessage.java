@@ -7,6 +7,7 @@ public class CapacityMessage extends Message implements Serializable{
    private int capacity;
    private boolean isSet = false;
 
+
     public CapacityMessage() {
         super(MessageTypeEnum.CapacityMessage);
     }

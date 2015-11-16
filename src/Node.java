@@ -9,11 +9,12 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Node {
 
-    private Socket leftSocket;
-    private Socket rightSocket;
+    private SocketInfo leftSocket;
+    private SocketInfo rightSocket;
     private ServerSocket serverSocket;
     private Map<Integer, String> resources;
 
@@ -29,35 +30,41 @@ public class Node {
 
     /**
      * Constructor used to connect node in existing system
-     *
      * @param ip   of node in a existing p2p system
      * @param connectport of a node in a existing p2p system
      */
     public Node(String ip, int connectport) {
-        try {
+        try
+        {
             initialize();
             connectToExistingNode(ip, connectport);
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             System.out.println("Please enter valid IP and port of a node in the system.\n Exiting...");
             System.exit(0);
         }
     }
 
     public static void main(String[] args) {
-        try {
-        System.out.println("Welcome to NodeHax \n" +
-                "To connect to an existing server enter the ip else just press 'enter'");
+        try
+        {
+            System.out.println("Welcome to NodeHax \n" +
+                    "To connect to an existing server enter the ip else just write 'new'");
 
-        String ip = System.console().readLine();
-        if(ip.isEmpty())
-        {
-            Node node = new Node(); // Node this is not connected to any existing p2p-system
-        }
-        else
-        {
-            System.out.println("Now enter port for the existing node.");
-            String port = System.console().readLine();
-            Node node = new Node(ip,Integer.parseInt(port)); //Connect node to existing system
+            Scanner scanner = new Scanner(System.in);
+            String ip = "";
+            if (scanner.hasNext()) {
+                ip = scanner.next();
+            }
+
+            if (ip.equals("new")) {
+                Node node = new Node(); // Node this is not connected to any existing p2p-system
+            }
+            else
+            {
+                System.out.println("Now enter port for the existing node.");
+                String port = scanner.next();
+                Node node = new Node(ip, Integer.parseInt(port)); //Connect node to existing system
             }
         } catch (NumberFormatException e) {
             System.out.println("Please enter valid Port number.\nExiting...");
@@ -71,20 +78,21 @@ public class Node {
 
 
         try {
-
             Runnable runnableServerSocket = this::listenServerSocket;
-            Runnable runnableRight = this::listenRightSocket;
             Thread listenServerSocket = new Thread(runnableServerSocket);
-            Thread listenRight = new Thread(runnableRight);
             resources = new HashMap<Integer, String>();
+            Scanner scanner = new Scanner(System.in);
 
             System.out.println("Input port for incomming connections:");
             int port;
-            port = Integer.parseInt(System.console().readLine().trim());
-            serverSocket = new ServerSocket(port);
-            listenServerSocket.start();
-            listenRight.start();
-            listenLeftSocket();
+            if (scanner.hasNext()) {
+                port = Integer.parseInt(scanner.next());
+                serverSocket = new ServerSocket(port);
+                listenServerSocket.start();
+            } else {
+                System.out.println("Please enter a port... retrying.");
+                initialize();
+            }
         }
         catch (IOException e){System.out.println(e.getStackTrace());}
         catch (NumberFormatException e) {
@@ -97,7 +105,6 @@ public class Node {
 
     /**
      * Listens for any incoming connection from new nodes.
-     *
      * @throws NumberFormatException
      */
     private void listenServerSocket() throws NumberFormatException {
@@ -110,47 +117,11 @@ public class Node {
 
                 Message message = readMessageFromInputStream(s);
                 if(message == null) continue;
-                handleMessage(message,rightSocket);
+                handleMessage(message, s);
             }
         }
         catch (IOException e) {e.printStackTrace();}
         catch (ClassNotFoundException e) {e.printStackTrace();}
-    }
-
-    /**
-     * Listens for any incoming messages from right socket
-     */
-    private void listenRightSocket() {
-        try
-        {
-            System.out.println("listening on right socket");
-            listen(rightSocket,leftSocket);
-        }
-        catch (IOException e) {e.printStackTrace();}
-        catch (ClassNotFoundException e) {e.printStackTrace();}
-    }
-
-    /**
-     * Listens for any incoming messages from right socket
-     */
-    private void listenLeftSocket() {
-        try
-        {
-            System.out.println("listening on left socket");
-            listen(leftSocket,rightSocket);
-        }
-        catch (IOException e) {e.printStackTrace();}
-        catch (ClassNotFoundException e) {e.printStackTrace();}
-    }
-
-    private void listen(Socket thisSocket, Socket toSocket) throws IOException, ClassNotFoundException {
-        while (true) {
-            if (thisSocket != null) {
-                Message message = readMessageFromInputStream(thisSocket);
-                if(message == null) continue;
-                handleMessage(message, toSocket);
-            }
-        }
     }
 
 
@@ -159,25 +130,23 @@ public class Node {
     private void handleMessage(Message message, Socket toSocket) throws IOException {
         switch (message.getMessageType()) {
             case ConnectMessage:
-                System.out.println("Received connect message from ");
+                System.out.println("Received connect message.");
                 handleConnectMessage((ConnectMessage)message);
                 break;
 
             case DisconnectMessage:
-                if (((DisconnectMessage) message).getIsDisconnect()) {
-                    System.out.println("Received disconnect message");
-                    disconnectSocket(toSocket);
-                }
+                System.out.println("Received disconnect message.");
+                disconnectSocket((DisconnectMessage) message);
                 break;
 
             case PutMessage:
-                System.out.println("Received propagated message");
-                handlePutInput((PutMessage) message, toSocket);
+                System.out.println("Received putMessage.");
+                handlePutInput((PutMessage) message, rightSocket.getConnectableSocket());
                 break;
 
             case GetMessage:
-                System.out.println("Received get propagated request from ");
-                handleGetInput((GetMessage) message, toSocket);
+                System.out.println("Received getMessage.");
+                handleGetInput((GetMessage) message, rightSocket.getConnectableSocket());
                 break;
 
             case CapacityMessage:
@@ -198,9 +167,11 @@ public class Node {
      */
     private void connectToExistingNode(String ip, int port) {
         try {
-            System.out.println("Connecting to" + ip+ " " + port);
-            leftSocket = new Socket(ip, port);
-            sendMessage(new ConnectMessage(rightSocket.getInetAddress().toString(),rightSocket.getPort()),leftSocket);
+            System.out.println("Connecting to " + ip + " " + port);
+            leftSocket = new SocketInfo(ip, port);
+            rightSocket = leftSocket;
+            sendMessage(new ConnectMessage(serverSocket.getInetAddress().getLocalHost().getHostAddress(), serverSocket.getLocalPort()), leftSocket.getConnectableSocket());
+
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (UnknownHostException e) {
@@ -213,28 +184,20 @@ public class Node {
     /**
      * Disconnect connection on a socket.
      */
-    private void disconnectSocket(Socket socket) {
-        try {
-            if (socket != null) {
-                socket.close();
-                socket = null;
-                System.out.println("Disconnected");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void disconnectSocket(DisconnectMessage message) {
+        rightSocket = message.getNewConnectionInfo();
+        System.out.println("Disconnected old connection and added new connection to: " + message.getNewConnectionInfo().getIp());
     }
 
 
-     /**
+    /**
      * Propagate a given message to a neighbour.
-     *
      * @param message
      */
-    private void sendMessage(Object message, Socket socket) throws IOException {
-            System.out.println("Propagating resource");
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-            outputStream.writeObject(message);
+    private void sendMessage(Message message, Socket socket) throws IOException {
+        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+        outputStream.writeObject(message);
+        System.out.println("Propagated "+message.getMessageType().toString());
     }
 
     private void requestCapacity(Socket socket){
@@ -247,22 +210,28 @@ public class Node {
     }
 
     private void handleConnectMessage(ConnectMessage message) throws IOException {
-        if(!message.isNewJoin())
-        {
-            if(!rightSocket.isClosed())
-                rightSocket.close();
+        if (message.isNewConnection()) {
+            if (leftSocket == null && rightSocket == null) {
+                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+                rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+            } else {
+                System.out.println("Rewiring...");
+                //Prepare old connection info
+                ConnectMessage oldConnection = new ConnectMessage(leftSocket.getIp(), leftSocket.getPort());
+                oldConnection.setNewConnection(false);
 
-            rightSocket = null;
-            rightSocket = new Socket(message.getIpAddress(), message.getPort());
-        }
-        if(leftSocket==null){
-            leftSocket = new Socket(message.getIpAddress(),message.getPort());
-        }
-        else
-        {
-            message.setIsNewJoin(false);
-            sendMessage(message,leftSocket);
-            leftSocket.close();
+                //Send Disconnect message to old connection with new node info.
+                SocketInfo newNodeInfo = new SocketInfo(message.getIpAddress(), message.getPort());
+                sendMessage(new DisconnectMessage(newNodeInfo), leftSocket.getConnectableSocket());
+                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+
+                //Send old connection info to new node
+                sendMessage(oldConnection, leftSocket.getConnectableSocket());
+                System.out.println("Rewired.");
+            }
+        } else {
+            //Used by new node. Sets right socket info to another node in system.
+            rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
         }
     }
 
@@ -298,7 +267,7 @@ public class Node {
 
         System.out.println("Handling incoming resource...");
         try {
-            if (resources.containsKey(message.getKey())) sendMessage(message,rightSocket);
+            if (resources.containsKey(message.getKey())) sendMessage(message, rightSocket.getConnectableSocket());
             resources.put(message.getKey(),message.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
@@ -339,7 +308,7 @@ public class Node {
      */
     private void saveResource(PutMessage message) {
         resources.put(message.getKey(), message.getMessage());
-        System.out.println("Ressource stored.");
+        System.out.println("Resource stored.");
     }
 
 
@@ -366,7 +335,7 @@ public class Node {
             if (resources.containsKey(getMessage.getKey())) sendResourceToGet(getMessage);
             else {
                 System.out.println("resource not found. Request propagated");
-                    sendMessage(getMessage, socket);
+                sendMessage(getMessage, socket);
             }
         } catch (IOException e) {e.printStackTrace();}
     }
