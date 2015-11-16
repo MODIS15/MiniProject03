@@ -75,20 +75,51 @@ public class Node {
             Thread listenRight = new Thread(runnableRight);
             Thread listenLeft = new Thread(runnableLeft);
 
-
             listenGet.start();
             listenPut.start();
             listenNeighbours.start();
             listenRight.start();
             listenLeft.start();
 
-
         } catch (NumberFormatException e) {
             System.out.println("Invalid Port");
             initialize();
         }
 
+    }
 
+    /**
+     * Reconnect Leftsocket with a new node
+     *
+     * @param ip   of new node
+     * @param port of new node
+     */
+    private void rewireLeftSocket(String ip, int port) {
+        try {
+            disconnectLeftSocket();
+            leftSocket = new Socket(ip, port);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Disconnect connection on left socket.
+     */
+    private void disconnectLeftSocket() {
+        try {
+            if (leftSocket != null) {
+                leftSocket.close();
+                leftSocket = null;
+                System.out.println("Disconnected");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //Listeners
@@ -99,7 +130,8 @@ public class Node {
      * @throws NumberFormatException
      */
     private void listenForPut() throws NumberFormatException {
-        try {
+        try
+        {
             while (true) {
                 System.out.println("Waiting for connection from new put-client...");
                 Socket s = putInputSocket.accept();
@@ -229,40 +261,6 @@ public class Node {
 
 
     //Connection methods
-
-    /**
-     * Reconnect Leftsocket with a new node
-     *
-     * @param ip   of new node
-     * @param port of new node
-     */
-    private void rewireLeftSocket(String ip, int port) {
-        try {
-            disconnectLeftSocket();
-            leftSocket = new Socket(ip, port);
-        } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Disconnect connection on left socket.
-     */
-    private void disconnectLeftSocket() {
-        try {
-            if (leftSocket != null) {
-                leftSocket.close();
-                leftSocket = null;
-                System.out.println("Disconnected");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Saving new incoming nodes. If left and right sockets are occupied, rewire connection.
