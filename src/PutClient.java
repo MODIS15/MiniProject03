@@ -32,8 +32,9 @@ public class PutClient {
 
                 System.out.println("Enter message to put: ");
                 String input = System.console().readLine();
-                int key = input.hashCode();
-                System.out.println("Key of resource: "+key);
+
+                System.out.println("Enter key of resource");
+                int key = Integer.parseInt(System.console().readLine());
                 PutMessage message = new PutMessage(key, input);
                 System.out.println();
 
