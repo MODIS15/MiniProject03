@@ -198,6 +198,7 @@ public class Node {
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
         outputStream.writeObject(message);
         System.out.println("Propagated "+message.getMessageType().toString());
+        socket.close();
     }
 
     private void requestCapacity(Socket socket){
@@ -354,7 +355,7 @@ public class Node {
             ObjectOutputStream outputStream = new ObjectOutputStream(getSocket.getOutputStream());
             outputStream.writeUTF(resource);
             outputStream.close();
-
+            getSocket.close();
             System.out.println("Sent");
 
         } catch (IOException e) {
