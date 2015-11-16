@@ -17,6 +17,7 @@ public class Node {
     private SocketInfo rightSocket;
     private ServerSocket serverSocket;
     private Map<Integer, String> resources;
+    private Thread echoThread;
 
 
 
@@ -75,10 +76,10 @@ public class Node {
 
 
     private void initialize() {
-
-
         try {
             Runnable runnableServerSocket = this::listenServerSocket;
+            Runnable runnableEcho = this::initiateEcho;
+            echoThread = new Thread(runnableEcho);
             Thread listenServerSocket = new Thread(runnableServerSocket);
             resources = new HashMap<Integer, String>();
             Scanner scanner = new Scanner(System.in);
@@ -89,6 +90,7 @@ public class Node {
                 port = Integer.parseInt(scanner.next());
                 serverSocket = new ServerSocket(port);
                 listenServerSocket.start();
+                echoThread.start();
             } else {
                 System.out.println("Please enter a port... retrying.");
                 initialize();
@@ -113,7 +115,7 @@ public class Node {
 
             while (true) {
                 Socket s = serverSocket.accept();
-                System.out.println("Connection from: " + s.getInetAddress() + " was established.");
+                System.out.println("Connection from: " + s.getInetAddress() + " "+ s.getPort() + " was established.");
 
                 Message message = readMessageFromInputStream(s);
                 if(message == null) continue;
@@ -154,6 +156,8 @@ public class Node {
                     returnCapacityRequest(toSocket, (CapacityMessage) message);
                 }
                 break;
+            case EchoMessage:
+                handleEchoMessage((EchoMessage) message);
             default:
                 System.out.println("Message Type not recognized...");
                 break;
@@ -186,18 +190,66 @@ public class Node {
      */
     private void disconnectSocket(DisconnectMessage message) {
         rightSocket = message.getNewConnectionInfo();
-        System.out.println("Disconnected old connection and added new connection to: " + message.getNewConnectionInfo().getIp());
+        System.out.println("Disconnected old connection and added new connection to: " +
+                                message.getNewConnectionInfo().getIp() + " " + message.getNewConnectionInfo().getPort());
+    }
+
+    private void handleEchoMessage(EchoMessage message){
+        try
+        {
+            if(!message.IsAlive()){
+            message.setIsAlive(true);
+                System.out.println("received Echo message from: "+);
+                sendMessage(message, rightSocket.getConnectableSocket());
+            }
+            else{
+                interruptEcho();
+                initiateEcho();
+            }
+        }
+        catch (IOException e) {e.printStackTrace();}
+
+    }
+
+    private void initiateEcho(){
+        try {
+            if(echoThread != null)
+            {
+                echoThread.sleep(5000);
+                sendMessage(new EchoMessage(), leftSocket.getConnectableSocket());
+                System.out.println("Sending Echo to: "+leftSocket.getIp() +" "+leftSocket.getPort());
+                echoThread.sleep(5000);
+                reconstructSystem();
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void interruptEcho(){
+        if(echoThread != null)
+        {
+            echoThread.interrupt();
+            echoThread = null;
+        }
+    }
+
+    private void reconstructSystem(){
+
     }
 
 
     /**
-     * Propagate a given message to a neighbour.
+     * Send a given message to a neighbour.
      * @param message
      */
     private void sendMessage(Message message, Socket socket) throws IOException {
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
         outputStream.writeObject(message);
-        System.out.println("Propagated "+message.getMessageType().toString());
+        System.out.println("Sent: "+message.getMessageType().toString());
         socket.close();
     }
 
@@ -260,7 +312,6 @@ public class Node {
 
     /**
      * Handle putmessage by either storing its resource or propagating it
-     *
      * @param message
      * @param socket
      */

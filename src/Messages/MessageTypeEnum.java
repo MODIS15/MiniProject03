@@ -7,5 +7,6 @@ public enum MessageTypeEnum
         DisconnectMessage,
         GetMessage,
         PutMessage,
-        ResourcePackage
+        ResourcePackage,
+        EchoMessage
 }
