@@ -3,12 +3,14 @@ package Messages;
 
 import java.io.Serializable;
 
-public class CapacityMessage implements Serializable{
-
+public class CapacityMessage extends Message implements Serializable{
    private int capacity;
-
    private boolean isSet = false;
 
+
+    public CapacityMessage() {
+        super(MessageTypeEnum.CapacityMessage);
+    }
 
 
     public int getCapacity() {

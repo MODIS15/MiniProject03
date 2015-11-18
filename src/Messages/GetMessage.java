@@ -2,12 +2,16 @@ package Messages;
 
 import java.io.Serializable;
 
-public class GetMessage implements Serializable {
+public class GetMessage extends Message implements Serializable {
     private int key;
     private String ip;
     private int port;
 
+    protected GetMessage() {
+    }
+
     public GetMessage(Integer key, String ip, int port){
+        super(MessageTypeEnum.GetMessage);
         this.key = key;
         this.ip = ip;
         this.port = port;

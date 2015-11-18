@@ -2,11 +2,20 @@ package Messages;
 
 import java.io.Serializable;
 
-public class DisconnectMessage implements Serializable{
-    private boolean isDisconnect = false;
-    //Possible for future extensions
+public class DisconnectMessage extends Message implements Serializable{
+    private boolean isDisconnect = false; //For future extensions
 
-    public DisconnectMessage(){}
+    private SocketInfo newConnectionInfo;
+
+    public DisconnectMessage() {
+        super(MessageTypeEnum.DisconnectMessage);
+        isDisconnect = true;
+    }
+
+    public DisconnectMessage(SocketInfo socketInfo) {
+        super(MessageTypeEnum.DisconnectMessage);
+        newConnectionInfo = socketInfo;
+    }
 
     public void setDisconnect(boolean bool){
         isDisconnect = bool;
@@ -14,5 +23,9 @@ public class DisconnectMessage implements Serializable{
 
     public boolean getIsDisconnect(){
         return isDisconnect;
+    }
+
+    public SocketInfo getNewConnectionInfo() {
+        return newConnectionInfo;
     }
 }
