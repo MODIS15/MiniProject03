@@ -77,11 +77,11 @@ public class CircleNode {
         {
             Socket startSocket = new Socket(rightSideIp, rightSidePort);
 
-            String lostHostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
-            int index  = lostHostIP.indexOf("/");
-            lostHostIP = lostHostIP.substring(index+1,lostHostIP.length());
+            String hostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
+            int index  = hostIP.indexOf("/");
+            hostIP = hostIP.substring(index+1,hostIP.length());
 
-            ConnectMessage connectMessage = new ConnectMessage("From",lostHostIP,ownPort);
+            ConnectMessage connectMessage = new ConnectMessage("From",hostIP,ownPort);
 
             ObjectOutputStream clientOutputStream = new ObjectOutputStream(startSocket.getOutputStream());
             clientOutputStream.writeObject(connectMessage);
@@ -124,21 +124,21 @@ public class CircleNode {
 
                     if (foreignport == leftSidePort)
                     {
-                        Socket rightSocket = new Socket(rightSideIp,rightSidePort);
-
                         //Sends all of it's refferences to the right, since it has inheriented all of it's references.
-                        sendResourceMessage(rightSocket,new ResourceMessage
-                                        (
-                                                refferenceresources
-                                        )
-                        );
+                        if (!refferenceresources.isEmpty()) {
+                            sendResourceMessage(new Socket(rightSideIp,rightSidePort), new ResourceMessage
+                                            (
+                                                    refferenceresources
+                                            )
+                            );
 
-                        String message;
-                        for (int key : refferenceresources.keySet()) // Removes all of it's references.
-                        {
-                            message = ownResources.get(key);
-                            ownResources.put(key,message);
-                            refferenceresources.remove(key);
+                            String message = "";
+                            for (Integer key : refferenceresources.keySet()) // Removes all of it's references.
+                            {
+                                message = refferenceresources.get(key);
+                                ownResources.put(key, message);
+                            }
+                            refferenceresources.clear();
                         }
 
                         String localhost = inputServerSocket.getInetAddress().getLocalHost().toString();
@@ -146,7 +146,6 @@ public class CircleNode {
                         localhost = localhost.substring(index+1,localhost.length());
 
                         Socket newLeftSideSocket = new Socket(discoverIp, discoverPort);
-
 
                         sendConnectMessage(newLeftSideSocket, new ConnectMessage("To", localhost, ownPort));
                         System.out.println("Tries to reconnect with: " + discoverIp + " " + discoverPort);
@@ -186,6 +185,7 @@ public class CircleNode {
                         //Send resource to the right socket. If it exsists
                         if (!rightSideIp.equals(""))
                         {
+                            System.out.println("SEND PUTMESSAGE");
                             PutMessage putMessage = new PutMessage(key,message,false);
                             sendPutMessage(new Socket(rightSideIp,rightSidePort),putMessage);
                         }
@@ -266,7 +266,7 @@ public class CircleNode {
 
                     if (!ownResources.isEmpty()) // Send all information to the second node.
                     {
-                        sendResourceMessage(rightSocket,
+                        sendResourceMessage(new Socket(rightSideIp,rightSidePort),
                                 new ResourceMessage
                                         (
                                                 ownResources
@@ -314,16 +314,15 @@ public class CircleNode {
 
             try
             {
-                Socket rightSocket = new Socket(rightSideIp, rightSidePort);
-
                 if (underConstruction)
                 {
-                    if (!refferenceresources.isEmpty())
-                    sendResourceMessage(rightSocket,new ResourceMessage
-                            (
-                                    refferenceresources
-                            )
-                    );
+                    if (!ownResources.isEmpty()) {
+                        sendResourceMessage(new Socket(rightSideIp, rightSidePort), new ResourceMessage
+                                        (
+                                                ownResources
+                                        )
+                        );
+                    }
                     underConstruction = false;
                 }
 
@@ -331,8 +330,10 @@ public class CircleNode {
                 int index  = hostIP.indexOf("/");
                 hostIP = hostIP.substring(index+1,hostIP.length());
 
+                System.out.println("SEND CLOSURE MESSAGE");
                 ConnectMessage connectMessage = new ConnectMessage("Closure",hostIP,ownPort);
 
+                Socket rightSocket = new Socket(rightSideIp, rightSidePort);
                 sendConnectMessage(rightSocket, connectMessage);
             }
             catch (IOException e){e.printStackTrace();}
@@ -377,6 +378,12 @@ public class CircleNode {
 
     private void intiateNewEcho()
     {
+        /*
+        try{Thread.sleep(600);}
+        catch (InterruptedException e) {
+            System.out.println("HERE!!!!");
+            e.printStackTrace();}
+            */
         if (echo != null) // Better safe than sorry
         {
             echo.interrupt();
@@ -400,7 +407,7 @@ public class CircleNode {
             Thread.sleep(5000);
             //TO-DO ALERT
             System.out.println("IN ECHO : ALERT");
-            //reconstruct();
+            //reconstruct(); <-- ACTIVATE??
         }
         catch (InterruptedException e){}
         catch (IOException e){
@@ -420,6 +427,17 @@ public class CircleNode {
             echo = null;
             rightSideIp = "";
             leftSideIp = "";
+            if (!refferenceresources.isEmpty())
+            {
+                String message = "";
+                for (int key : refferenceresources.keySet())
+                {
+                    message = refferenceresources.get(key);
+                    ownResources.put(key,message);
+                }
+                refferenceresources.clear();
+            }
+
         }
         else
         {
