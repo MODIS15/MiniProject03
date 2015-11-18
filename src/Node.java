@@ -265,8 +265,7 @@ public class Node {
             }
             else{
                 System.out.println(leftSocket.getIp()+" "+leftSocket.getPort()+" Is alive");
-                interruptEcho();
-                initiateEcho();
+                restartEcho();
             }
         }
         catch (IOException e) {e.printStackTrace();}
@@ -288,11 +287,11 @@ public class Node {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+
         }
     }
 
-    private void interruptEcho(){
+    private void restartEcho(){
         if(echoThread != null)
         {
             Runnable runnableEcho = this::initiateEcho;
