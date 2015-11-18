@@ -13,12 +13,15 @@ public class GetClient {
 
     private ServerSocket incomingFoundResourceSocket;
 
+    private int ownPort;
+
     /**
      * Constructor for GetClient
      * @param port
      * @throws IOException
      */
     public GetClient(int port) throws IOException {
+        ownPort = port;
         incomingFoundResourceSocket = new ServerSocket(port);
         initialize();
     }
@@ -32,7 +35,7 @@ public class GetClient {
         Thread incomingTread = new Thread(incoming);
         incomingTread.start();
         System.out.println("Use the following syntax for creating a getMessage:");
-        System.out.println("\"getmessage\" key ip port");
+        System.out.println("key ip port");
 
         while(true)
         {
@@ -57,22 +60,23 @@ public class GetClient {
     {
         try
         {
-        while(true)
-        {
             String[] splitRequest = request.split(" ");
 
-                int key = Integer.parseInt(splitRequest[1]);
-                String ip = splitRequest[2];
-                int port = Integer.parseInt(splitRequest[3]);
+                int key = Integer.parseInt(splitRequest[0]);
+                String ip = splitRequest[1];
+                int port = Integer.parseInt(splitRequest[2]);
 
-                GetMessage message = new GetMessage(key, ip, port);
+            String localhost = incomingFoundResourceSocket.getInetAddress().getLocalHost().toString();
+            int index  = localhost.indexOf("/");
+            localhost = localhost.substring(index+1,localhost.length());
+
+                GetMessage message = new GetMessage(key, localhost, ownPort);
 
                 Socket s = new Socket(ip, port);
                 ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
                 output.writeObject(message);
 
                 output.close();
-            }
         }catch (UnknownHostException e) {
             e.printStackTrace();
             System.out.println("The host could not be found");
@@ -160,8 +164,7 @@ public class GetClient {
         try
         {
             System.out.println("Please input the port for your GetClient");
-            int port = Integer.parseInt(System.console().readLine());
-            GetClient get = new GetClient(port);
+            GetClient get = new GetClient(Integer.parseInt(args[0]));
         }
         catch (IOException e)
         {

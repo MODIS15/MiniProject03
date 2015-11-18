@@ -198,11 +198,12 @@ public class CircleNode {
                         System.out.println(refferenceresources.get(key));
                     }
                 }
-                if (object instanceof ResourceMessage)
+                else if (object instanceof ResourceMessage)
                 {
+                    HashMap<Integer,String> moreRefs = ((ResourceMessage) object).getStoredResource();
                     if (underConstruction)
                     {
-                        HashMap<Integer,String> moreRefs = ((ResourceMessage) object).getStoredResource();
+
                         for (int key : moreRefs.keySet())
                         {
                             String message = moreRefs.get(key);
@@ -213,13 +214,35 @@ public class CircleNode {
                     }
                     else //If the node isn't under construction. Then it's just going to "inherited" more information.
                     {
-                        HashMap<Integer,String> moreRefs = ((ResourceMessage) object).getStoredResource();
                         for (int key : moreRefs.keySet())
                         {
                             String message = moreRefs.get(key);
                             refferenceresources.put(key,message);
                         }
                     }
+                }
+                else if (object instanceof GetMessage)
+                {
+                    int key = ((GetMessage) object).getKey();
+                    int port = ((GetMessage) object).getPort();
+                    String ip = ((GetMessage) object).getIp();
+
+                    String message = "";
+                    if (ownResources.containsKey(key)) // Checks if ownResources has the key
+                    {
+                        message = ownResources.get(key);
+                        sendPutMessage(new Socket(ip,port),new PutMessage(key,message,false));
+                    }
+                    else if (refferenceresources.containsKey(key)) // Checks if refferencesources has the key
+                    {
+                        message = refferenceresources.get(key);
+                        sendPutMessage(new Socket(ip,port),new PutMessage(key,message,false));
+                    }
+                    else //Otherwise send to the right.
+                    {
+                        sendGetMessage(new Socket(rightSideIp,rightSidePort),new GetMessage(key,ip,port));
+                    }
+
                 }
             }
         } catch (IOException e) {
@@ -397,8 +420,8 @@ public class CircleNode {
     public void sendEcho()
     {
         try {
-            for (int key : refferenceresources.keySet()) {System.out.println("REF : " + refferenceresources.get(key));}
-            for (int key : ownResources.keySet()) {System.out.println("ORG : " + ownResources.get(key));}
+            //for (int key : refferenceresources.keySet()) {System.out.println("REF : " + refferenceresources.get(key));}
+            //for (int key : ownResources.keySet()) {System.out.println("ORG : " + ownResources.get(key));}
             //Wait time
             Thread.sleep(1500);
             //Sends echo
@@ -474,6 +497,15 @@ public class CircleNode {
         try {
             ObjectOutputStream clientOutputStream = new ObjectOutputStream(rightSideSocket.getOutputStream());
             clientOutputStream.writeObject(putMessage);
+        }
+        catch (IOException e){System.out.println("Couldn't send putMessage");}
+    }
+
+    private void sendGetMessage(Socket socket, GetMessage getMessage)
+    {
+        try {
+            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            clientOutputStream.writeObject(getMessage);
         }
         catch (IOException e){System.out.println("Couldn't send putMessage");}
     }
