@@ -1,4 +1,5 @@
 import Messages.GetMessage;
+import Messages.PutMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -36,10 +37,14 @@ public class GetClient {
         while(true)
         {
             String request = System.console().readLine().toLowerCase().trim();
+            getResource(request);
+            /*
+            String request = System.console().readLine().toLowerCase().trim();
             if(isValid(request))
             {
                 getResource(request);
             }
+            */
         }
     }
 
@@ -99,11 +104,17 @@ public class GetClient {
             while (true) {
                 Socket socket = incomingFoundResourceSocket.accept();
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+                Object object = input.readObject();
 
-                if (input.readObject() != null) {
-                    Object object = input.readObject();
+                if (object instanceof PutMessage) {
+                    int key = ((PutMessage) object).getKey();
+                    String message = ((PutMessage) object).getMessage();
 
-                    handleIncomingResource(object);
+                    System.out.println("RECEIVED MESSAGE");
+                    System.out.println("Key: " + key);
+                    System.out.println("Message: " + message);
+
+                    //handleIncomingResource(object);
                 }
 
                 socket.close();

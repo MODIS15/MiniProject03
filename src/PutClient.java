@@ -34,7 +34,7 @@ public class PutClient {
                 String input = System.console().readLine();
                 int key = input.hashCode();
                 System.out.println("Key of resource: "+key);
-                PutMessage message = new PutMessage(key, input);
+                PutMessage message = new PutMessage(key, input,true);
                 System.out.println();
 
                 Socket s = new Socket(ip, Integer.parseInt(port));
