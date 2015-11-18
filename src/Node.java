@@ -131,8 +131,27 @@ public class Node {
         catch (ClassNotFoundException e) {e.printStackTrace();}
     }
 
+    private Message readMessageFromInputStream(Socket s) throws IOException, ClassNotFoundException {
+        if(s==null) return null;
+        ObjectInputStream inputStream = new ObjectInputStream(s.getInputStream());
+        Object object = inputStream.readObject();
 
-    //Connection methods
+        if(object instanceof Message) return (Message)object;
+        else return null;
+    }
+
+    /**
+     * Send a given message to a neighbour.
+     * @param message
+     */
+    private void sendMessage(Message message, Socket socket) throws IOException {
+        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+        outputStream.writeObject(message);
+        System.out.println("Sent: "+message.getMessageType().toString());
+        socket.close();
+    }
+
+    //MessageControl methods
 
     private void handleMessage(Message message, Socket toSocket) throws IOException {
         switch (message.getMessageType()) {
@@ -200,11 +219,47 @@ public class Node {
                                 message.getNewConnectionInfo().getIp() + " " + message.getNewConnectionInfo().getPort());
     }
 
+    private void reconstructSystem(){}
+
+
+
+
+    //ConnectionHandlers
+
+    private void handleConnectMessage(ConnectMessage message) throws IOException {
+        if (message.isNewConnection()) {
+            if (leftSocket == null && rightSocket == null) {
+                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+                rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+            } else {
+                System.out.println("Rewiring...");
+                //Prepare old connection info
+                ConnectMessage oldConnection = new ConnectMessage(leftSocket.getIp(), leftSocket.getPort());
+                oldConnection.setNewConnection(false);
+
+                //Send Disconnect message to old connection with new node info.
+                SocketInfo newNodeInfo = new SocketInfo(message.getIpAddress(), message.getPort());
+                sendMessage(new DisconnectMessage(newNodeInfo), leftSocket.getConnectableSocket());
+                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+
+                //Send old connection info to new node
+                sendMessage(oldConnection, leftSocket.getConnectableSocket());
+                System.out.println("Rewired.");
+            }
+        } else {
+            //Used by new node. Sets right socket info to another node in system.
+            rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
+        }
+    }
+
+
+    //EchoHandler
+
     private void handleEchoMessage(EchoMessage message){
         try
         {
             if(!message.IsAlive()){
-            message.setIsAlive(true);
+                message.setIsAlive(true);
                 System.out.println("received Echo message from: "+ rightSocket.getIp()+" "+rightSocket.getPort());
                 sendMessage(message, rightSocket.getConnectableSocket());
             }
@@ -240,73 +295,16 @@ public class Node {
     private void interruptEcho(){
         if(echoThread != null)
         {
+            Runnable runnableEcho = this::initiateEcho;
             echoThread.interrupt();
             echoThread = null;
+            echoThread = new Thread(runnableEcho);
+            echoThread.start();
         }
     }
 
-    private void reconstructSystem(){
 
-    }
-
-
-    /**
-     * Send a given message to a neighbour.
-     * @param message
-     */
-    private void sendMessage(Message message, Socket socket) throws IOException {
-        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-        outputStream.writeObject(message);
-        System.out.println("Sent: "+message.getMessageType().toString());
-        socket.close();
-    }
-
-    private void requestCapacity(Socket socket){
-        try
-        {
-            System.out.println("Request Capacity not implemented");
-            sendMessage(new CapacityMessage(),socket);
-        }
-        catch (IOException e) {e.printStackTrace();}
-    }
-
-    private void handleConnectMessage(ConnectMessage message) throws IOException {
-        if (message.isNewConnection()) {
-            if (leftSocket == null && rightSocket == null) {
-                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
-                rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
-            } else {
-                System.out.println("Rewiring...");
-                //Prepare old connection info
-                ConnectMessage oldConnection = new ConnectMessage(leftSocket.getIp(), leftSocket.getPort());
-                oldConnection.setNewConnection(false);
-
-                //Send Disconnect message to old connection with new node info.
-                SocketInfo newNodeInfo = new SocketInfo(message.getIpAddress(), message.getPort());
-                sendMessage(new DisconnectMessage(newNodeInfo), leftSocket.getConnectableSocket());
-                leftSocket = new SocketInfo(message.getIpAddress(), message.getPort());
-
-                //Send old connection info to new node
-                sendMessage(oldConnection, leftSocket.getConnectableSocket());
-                System.out.println("Rewired.");
-            }
-        } else {
-            //Used by new node. Sets right socket info to another node in system.
-            rightSocket = new SocketInfo(message.getIpAddress(), message.getPort());
-        }
-    }
-
-    private Message readMessageFromInputStream(Socket s) throws IOException, ClassNotFoundException {
-        if(s==null) return null;
-        ObjectInputStream inputStream = new ObjectInputStream(s.getInputStream());
-        Object object = inputStream.readObject();
-
-        if(object instanceof Message) return (Message)object;
-        else return null;
-    }
-
-
-    //PutClient methods
+    //PutClient
 
     private void returnCapacityRequest(Socket s, CapacityMessage message) {
         try {
@@ -316,6 +314,15 @@ public class Node {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void requestCapacity(Socket socket){
+        try
+        {
+            System.out.println("Request Capacity not implemented");
+            sendMessage(new CapacityMessage(),socket);
+        }
+        catch (IOException e) {e.printStackTrace();}
     }
 
     /**
@@ -421,4 +428,6 @@ public class Node {
             e.printStackTrace();
         }
     }
+
+
 }
