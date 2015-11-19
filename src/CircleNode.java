@@ -77,8 +77,7 @@ public class CircleNode {
 
             ConnectMessage connectMessage = new ConnectMessage("From",hostIp,ownPort);
 
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(startSocket.getOutputStream());
-            clientOutputStream.writeObject(connectMessage);
+            sendMessage(startSocket,connectMessage);
         }
         catch (IOException e){e.printStackTrace();}
     }
@@ -108,47 +107,60 @@ public class CircleNode {
         }
     }
 
+    /**
+     * This method is used to handle different message types appropriately.
+     * @param message
+     */
     public void handleMessage(Message message)
     {
         switch (message.getMessageType())
         {
-            case ConnectMessage: //Responsible for joining the nodes properly together.
+            case ConnectMessage: //Join nodes
                 handleConnectMessage((ConnectMessage)message);
-                System.out.println("ECHO-MESSAGE"); //Starts the echo / heartbeat
-                intiateNewEcho();
+                System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
+                initiateNewEcho();
                 break;
-            case ReconstructMessage: // Responsible for reconstructing nodes / making the circle complete again.
+            case ReconstructMessage: // Reconstruct circle network if broken
                 handleReconstructMessage((ReconstructMessage)message);
                 break;
 
-            case EchoMessage: // Responsible for making sure that the right side are alive
+            case EchoMessage: // Check if right side node is alive
                 handleEchoMessage((EchoMessage) message);
                 break;
 
-            case ResourceMessage: // Responsible for sending entire hashmaps of resource to other nodes.
-                handleRecourceMessage((ResourceMessage)message);
+            case ResourceMessage: // Send entire hash maps with resources to other nodes.
+                handleResourceMessage((ResourceMessage) message);
                 break;
 
-            case PutMessage: // Responsible for placing one resource in a given node.
+            case PutMessage: // Place resource in a given node
                 handlePutMessage((PutMessage)message);
                 break;
 
-            case GetMessage: // Responsible for getting a resource if it exsits in the system.
+            case GetMessage: // Get resource in existing node
                 handleGetMessage((GetMessage)message);
                 break;
         }
     }
 
-    private void sendConnectMessage(Socket socket, ConnectMessage connectMessage)
+    /**
+     * Sends a serialized message to a given node.
+     * @param socket endpoint of node to which message is sent
+     * @param message message sent
+     */
+    private void sendMessage(Socket socket, Message message)
     {
         try
         {
             ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            clientOutputStream.writeObject(connectMessage);
+            clientOutputStream.writeObject(message);
         }
         catch (IOException e){e.printStackTrace();}
     }
 
+    /**
+     *
+     * @param connectMessage
+     */
     private void handleConnectMessage(ConnectMessage connectMessage)
     {
         //Gets the values from the sender of the message
@@ -197,11 +209,11 @@ public class CircleNode {
 
                 ConnectMessage connectMessage = new ConnectMessage("Closure",hostIP,ownPort); //Tells the new node that it should set its leftside to this node
 
-                sendConnectMessage(rightSocket, connectMessage);
+                sendMessage(rightSocket, connectMessage);
 
                 if (!ownResources.isEmpty()) // Send all information to the new node.
                 {
-                    sendResourceMessage(new Socket(rightSideIp,rightSidePort),
+                    sendMessage(new Socket(rightSideIp,rightSidePort),
                                         new ResourceMessage(ownResources));
                 }
             }
@@ -211,14 +223,14 @@ public class CircleNode {
                 if (!referencedResources.isEmpty()) // Sends all inherited references to new middle node
                 {
                     leftSocket = new Socket(ip, port);
-                    sendResourceMessage(leftSocket, new ResourceMessage(referencedResources));
+                    sendMessage(leftSocket, new ResourceMessage(referencedResources));
                     referencedResources.clear();
                 }
 
                 //Inform the left side, that is should set it's rightside to the new node.
                 leftSocket = new Socket(leftSideIp, leftSidePort);
                 ConnectMessage connectMessage = new ConnectMessage("To",ip,port);
-                sendConnectMessage(leftSocket, connectMessage);
+                sendMessage(leftSocket, connectMessage);
 
                 //Left side is set to the sender.
                 leftSideIp = ip;
@@ -239,7 +251,7 @@ public class CircleNode {
             if (underConstruction) //Circle is being reconstructed.
             {
                 if (!ownResources.isEmpty()) { //Send a copy of own resources to new right node so it can store them as references.
-                    sendResourceMessage(new Socket(rightSideIp, rightSidePort),
+                    sendMessage(new Socket(rightSideIp, rightSidePort),
                                         new ResourceMessage(ownResources));
                 }
                 underConstruction = false;
@@ -252,7 +264,7 @@ public class CircleNode {
             //Informing the new right node that it should set its left side to this node.
             ConnectMessage connectMessage = new ConnectMessage("Closure",hostIP,ownPort);
             Socket rightSocket = new Socket(rightSideIp, rightSidePort);
-            sendConnectMessage(rightSocket, connectMessage);
+            sendMessage(rightSocket, connectMessage);
         }
         catch (IOException e){e.printStackTrace();}
     }
@@ -277,7 +289,7 @@ public class CircleNode {
             {
                 //Sends all of it's refferences to the right, since it has inheriented all of it's references.
                 if (!referencedResources.isEmpty()) {
-                    sendResourceMessage(new Socket(rightSideIp,rightSidePort), new ResourceMessage
+                    sendMessage(new Socket(rightSideIp,rightSidePort), new ResourceMessage
                                     (
                                             referencedResources
                                     )
@@ -298,7 +310,7 @@ public class CircleNode {
 
                 //Inform the new left side, that it should connect its right side with the current / this node.
                 Socket newLeftSideSocket = new Socket(discoverIp, discoverPort);
-                sendConnectMessage(newLeftSideSocket, new ConnectMessage("To", localhost, ownPort));
+                sendMessage(newLeftSideSocket, new ConnectMessage("To", localhost, ownPort));
                 System.out.println("Tries to reconnect with: " + discoverIp + " " + discoverPort);
                 underConstruction = true; //Will now respond differently when a resourceMessage arrives.
             }
@@ -311,7 +323,7 @@ public class CircleNode {
                         discoverIp = discoverIp,
                         discoverPort = discoverPort
                 );
-                sendReconstructMessage(new Socket(leftSideIp, leftSidePort), newReconstructMessage);
+                sendMessage(new Socket(leftSideIp, leftSidePort), newReconstructMessage);
             }
         }catch (IOException e){e.printStackTrace();}
     }
@@ -323,7 +335,7 @@ public class CircleNode {
         {
             System.out.println("SEND ECHO RETURN");
             //Send echo-message return
-            try {sendEchoMessage(new Socket(leftSideIp,leftSidePort), new EchoMessage(true,ownPort));}
+            try {sendMessage(new Socket(leftSideIp,leftSidePort), new EchoMessage(true,ownPort));}
             catch (IOException e){e.printStackTrace();}
         }
         else
@@ -333,25 +345,14 @@ public class CircleNode {
             echo.interrupt();
             echo = null;
             //Intiate new one echo-thread
-            intiateNewEcho();
+            initiateNewEcho();
         }
     }
 
-    public void sendEchoMessage(Socket socket, EchoMessage echoMessage)
-    {
-        try
-        {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            clientOutputStream.writeObject(echoMessage);
-        }
-        catch (IOException e){
-            e.printStackTrace();
-            System.out.println("IGNORE");}
-    }
 
-    private void intiateNewEcho()
+    private void initiateNewEcho()
     {
-        if (echo != null) // Better safe than sorry
+        if (echo != null)
         {
             echo.interrupt();
             echo = null;
@@ -369,7 +370,7 @@ public class CircleNode {
             Thread.sleep(3000);
             //Sends echo
             System.out.println("ECHO!!!!!");
-            sendEchoMessage(new Socket(rightSideIp, rightSidePort), new EchoMessage(false, ownPort));
+            sendMessage(new Socket(rightSideIp, rightSidePort), new EchoMessage(false, ownPort));
             //If the thread / echo hasn't been terminated / returned before this. Then something is wrong.
             Thread.sleep(5000);
             //NOT IMPLEMENTED. Restore from the left side
@@ -383,7 +384,7 @@ public class CircleNode {
         }
     }
 
-    public void handleRecourceMessage(ResourceMessage resourceMessage)
+    public void handleResourceMessage(ResourceMessage resourceMessage)
     {
         HashMap<Integer,String> moreRefs = resourceMessage.getStoredResource();
         for (int key : moreRefs.keySet())
@@ -410,7 +411,7 @@ public class CircleNode {
                 try
                 {
                     PutMessage newPutMessage = new PutMessage(key,resource,false);
-                    sendPutMessage(new Socket(rightSideIp,rightSidePort),newPutMessage);
+                    sendMessage(new Socket(rightSideIp,rightSidePort),newPutMessage);
                 }
                 catch (IOException e) {e.printStackTrace();}
             }
@@ -434,16 +435,16 @@ public class CircleNode {
             if (ownResources.containsKey(key)) // Checks if ownResources has the key
             {
                 message = ownResources.get(key);
-                sendPutMessage(getClientSocket, new PutMessage(key, message, false));
+                sendMessage(getClientSocket, new PutMessage(key, message, false));
             }
             else if (referencedResources.containsKey(key)) // Checks if refferenceResources has the key
             {
                 message = referencedResources.get(key);
-                sendPutMessage(getClientSocket, new PutMessage(key, message, false));
+                sendMessage(getClientSocket, new PutMessage(key, message, false));
             }
             else //Otherwise propagate message to the rightside node.
             {
-                sendGetMessage(new Socket(rightSideIp, rightSidePort), new GetMessage(key, ip, port));
+                sendMessage(new Socket(rightSideIp, rightSidePort), new GetMessage(key, ip, port));
             }
         }
         catch (IOException e) {e.printStackTrace();}
@@ -486,48 +487,13 @@ public class CircleNode {
                         ownPort
                 );
 
-                sendReconstructMessage(new Socket(leftSideIp, leftSidePort), reconstructMessage);
+                sendMessage(new Socket(leftSideIp, leftSidePort), reconstructMessage);
 
             } catch (IOException e) {
             }
         }
     }
 
-    private void sendReconstructMessage(Socket leftSideSocket,ReconstructMessage reconstructMessage)
-    {
-        try
-        {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(leftSideSocket.getOutputStream());
-            clientOutputStream.writeObject(reconstructMessage);
-        } catch (IOException e){e.printStackTrace();}
-    }
-
-    private void sendPutMessage(Socket rightSideSocket,PutMessage putMessage)
-    {
-        try {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(rightSideSocket.getOutputStream());
-            clientOutputStream.writeObject(putMessage);
-        }
-        catch (IOException e){System.out.println("Couldn't send putMessage");}
-    }
-
-    private void sendGetMessage(Socket socket, GetMessage getMessage)
-    {
-        try {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            clientOutputStream.writeObject(getMessage);
-        }
-        catch (IOException e){System.out.println("Couldn't send putMessage");}
-    }
-
-    private void sendResourceMessage(Socket socket, ResourceMessage resourceMessage)
-    {
-        try {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            clientOutputStream.writeObject(resourceMessage);
-        }
-        catch (IOException e){System.out.println("Couldn't send putMessage");}
-    }
 
     public static void main(String[] args)
     {
