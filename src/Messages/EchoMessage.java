@@ -3,7 +3,7 @@ package Messages;
 import java.io.Serializable;
 
 /**
- * Created by Jakob_P_Holm on 15/11/2015.
+ * This message is used to check if a given node is alive.
  */
 public class EchoMessage extends Message implements Serializable
 {

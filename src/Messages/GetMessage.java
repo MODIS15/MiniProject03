@@ -2,6 +2,9 @@ package Messages;
 
 import java.io.Serializable;
 
+/**
+ * A GetMessage contains the ip and port of the node with a resource specified by the key.
+ */
 public class GetMessage extends Message implements Serializable {
     private int key;
     private String ip;
@@ -15,6 +18,9 @@ public class GetMessage extends Message implements Serializable {
     }
 
     public int getKey(){return key;}
+
     public String getIp(){return ip;}
+
     public int getPort(){return port;}
+
 }

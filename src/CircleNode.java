@@ -463,6 +463,7 @@ public class CircleNode {
         System.out.println(rightSidePort + "=" + leftSidePort + " " + rightSideIp + "=" + leftSideIp);
         if (rightSidePort == leftSidePort)
         {
+            System.out.println("STOP");
             echo.interrupt();
             echo = null;
             rightSideIp = "";

@@ -7,9 +7,9 @@ Along with implementations and answers to questions listed below, your submissio
 
 Part A. You must implement the following three kinds of processes, potentially running at distinct machines.
 
-A "Node" process takes as arguments a local port and optionally the IP/port of another Node process. The Node then listens for PUT and GET requests on its local port. NB! "PUT" and "GET" are here just informal message types; they are not necessarily HTTP request verbs.
-A "PutClient-client" process takes as arguments the IP/port of a Node, an integer key, and a string value. The client then submits a PUT(key, value) message to the indicated node and terminates.
-A "GetClient-client" process takes arguments the IP/port of a Node, and an integer key. It submits a GET(key, ip2, port2) message to the indicated Node, then listens on ip2/port2 for a PUT(key, value) message, which, if it arrives, indicates that the Node network has stored the association (key, value), that is, that some PutClient-client previously issued that PUT.
+A "Node" process takes as arguments a local port and optionally the IP/port of another Node process. The Node then listens for PUT and GET requests on its local port. NB! "PUT" and "GET" are here just informal resource types; they are not necessarily HTTP request verbs.
+A "PutClient-client" process takes as arguments the IP/port of a Node, an integer key, and a string value. The client then submits a PUT(key, value) resource to the indicated node and terminates.
+A "GetClient-client" process takes arguments the IP/port of a Node, and an integer key. It submits a GET(key, ip2, port2) resource to the indicated Node, then listens on ip2/port2 for a PUT(key, value) resource, which, if it arrives, indicates that the Node network has stored the association (key, value), that is, that some PutClient-client previously issued that PUT.
 If the network of Nodes receives inconsistent PUTs, (e.g., PUT(1, A) then later PUT(1, B)), the value of subsequent GETs is undefined (i.e., no answer, PUT(1, A) and PUT(1, B) are all valid results.).
 
 Example execution. (We have omitted IP addresses for brevity.)
@@ -28,16 +28,16 @@ After implementation, answer the following questions:
 
 Is your system:
 a publish/subscribe system?
-... a message Queue?
+... a resource Queue?
 ... a structured P2P system?
 ... an unstructured P2P system?
 ... a distributed set implementation?
 ... a distributed hash table implementation?
 What is the average-case, best-case, and worst-case space consumed at each Node?
 What is the average-case, best-case and worst-case number and size of messages being sent as a result of
-A PUT message from a client, and
-A successful GET message from a client (that is, a value is found and sent back.)
-An unsuccessful GET message from a client (that is, no value is found.)
+A PUT resource from a client, and
+A successful GET resource from a client (that is, a value is found and sent back.)
+An unsuccessful GET resource from a client (that is, no value is found.)
 Based on 2 and 3, write a paragraph or two on the current scalability of your system.
 Based on 2, 3 and 4, give suggestions for improving the scalability of your system.
 Part B. Enhance your Node processes of Part A such that the network is resilient to the loss of any one Node. Continuing the above example:
@@ -56,9 +56,9 @@ Along with the documentation, submit the answer to the following questions.
 Briefly explain your solution and why it works.
 What is the average-case, best-case, and worst-case space consumed at each Node?
 What is the average-case, best-case and worst-case number and size of messages being sent as a result of
-A PUT message from a client, and
-A successful GET message from a client (that is, a value is found and sent back.)
-An unsuccessful GET message from a client (that is, no value is found.)
+A PUT resource from a client, and
+A successful GET resource from a client (that is, a value is found and sent back.)
+An unsuccessful GET resource from a client (that is, no value is found.)
 Write a paragraph or two suggesting improvements to scalability that does not compromise your one-node-resiliency.
 If your solution provides exactly one-node-resiliency, write a paragraph or two suggesting methods your one-node-resiliency can be expanded to n-node resiliency, assuming your network has time to reconfigure itself in between node failures.
 Hints.
@@ -67,6 +67,6 @@ As always, go for the simplest possible solution. As always, this exercise has a
 ...  that said, this is a harder exercise than the previous ones. Expect to use some more time discussing design.
 I expect you to do this using only TCP or UDP sockets and whatever's in the Java SE API.
 If you run out of time, then stop when you've spent 25 hours per group member; spend the remaining one hour per group member writing up what you've got, then submit that. (You've got a total of 30 hours for this mini-project, the lecture before it, and reading for that lecture.)
-You will likely need to transmit different kinds of messages. One convenient way to do this in Java is to use serialization. E.g., make, say, message classes implementing Serializable, then use ObjectOutputStream and ObjectInputStream to read/write them.
+You will likely need to transmit different kinds of messages. One convenient way to do this in Java is to use serialization. E.g., make, say, resource classes implementing Serializable, then use ObjectOutputStream and ObjectInputStream to read/write them.
 There are two ways to go about this mini project: you could either design and implement both parts A and B in one go, or you could first completely forget about part B while designing and implementing part A, then add part B.
 Use the TAs, the Forum, and the Office Hours. Feel free to bring your design by and see if we see any problems with it--doing so might save you lots of time.
