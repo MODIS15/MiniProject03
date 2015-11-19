@@ -159,9 +159,6 @@ public class CircleNode {
 
     private void handleConnectMessage(ConnectMessage connectMessage)
     {
-        System.out.println("leftside: " + leftSidePort);
-        System.out.println("rightside: " + rightSidePort);
-
         //Gets the values from the sender of the message
         String toFromOrClosure = connectMessage.getToAndFrom(); //Determins how the overall message are supposed to be handeled.
         String ip = connectMessage.getIpAddress(); //The ip-id of the message
@@ -179,6 +176,9 @@ public class CircleNode {
         {
             handleConnectClosureMessage(ip,port);
         }
+
+        System.out.println("leftside: " + leftSidePort);
+        System.out.println("rightside: " + rightSidePort);
     }
 
     private void handleConnectFromMessage(String ip, int port)
@@ -186,6 +186,8 @@ public class CircleNode {
         try {
         if (rightSideIp.equals("") && leftSideIp.equals("")) // When there only is one node
         {
+            System.out.println("INSIDE");
+
             //Sets the sender's ip and port to it's right and left side
             rightSideIp = ip;   rightSidePort = port;
             leftSideIp = ip;    leftSidePort = port;
