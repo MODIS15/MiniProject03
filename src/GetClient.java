@@ -1,6 +1,5 @@
 import Messages.GetMessage;
 import Messages.PutMessage;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,17 +8,17 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
+/**
+ * The GetClient is used to retrieve resources (message, key) from a Node. It takes the IP/port of a Node and an integer key as arguments.
+ * The GetClient then submits a GET(key, ip2, port2) message to the indicated Node. Then it listen on an ip2/port2 for a PUT(key, value) message.
+ * If the PUT message arrives, the Node network has stored the association (key, value), thus some PutClient previously issued that PUT message.
+ */
 public class GetClient {
 
     private ServerSocket incomingFoundResourceSocket;
 
     private int ownPort;
 
-    /**
-     * Constructor for GetClient
-     * @param port
-     * @throws IOException
-     */
     public GetClient(int port) throws IOException
     {
         ownPort = port;
@@ -28,30 +27,30 @@ public class GetClient {
     }
 
     /**
-     * Initializes thread for listening for incoming resources.
-     * Starts listening on the main thread for get message input from the console.
+     * Initializes a thread used to listen for incoming resources from a server socket.
+     * The listener (server socket) starts listening on the main thread for a get message input from the console.
      */
     private void initialize()
     {
-        Runnable incoming = this::listenForIncomingResources;
-        Thread incomingTread = new Thread(incoming);
-        incomingTread.start();
-        System.out.println("Use the following syntax for creating a getMessage:");
-        System.out.println("Ip and port are node's ip and port");
-        System.out.println("key ip port");
+        Runnable listenForMessage = this::listenForIncomingResources; // Indicates that method is runnable for this class
+        Thread thread = new Thread(listenForMessage);
+        thread.start();
+        System.out.println("Use the following syntax for creating a getMessage: ");
+        System.out.println("\"getmessage\" key ip port");
 
         while(true)
         {
             String request = System.console().readLine().toLowerCase().trim();
-            getResource(request);
-            System.out.println("Do agian");
+            if(isValid(request))
+            {
+                getResource(request);
+            }
         }
     }
 
     /**
-     * Listens for a console input starting with "get message",
-     * when such an input is received, getResources() sends a GetMessage to a Node for the specified resource
-     * @param request: User input from console to create a GetMessage for a specific file
+     * Sends a GetMessage to a Node with specified resource when using the "get message" command from console.
+     * @param request: user input from console used to create a GetMessage for a specific resource.
      */
     private void getResource(String request)
     {
@@ -59,21 +58,18 @@ public class GetClient {
         {
             String[] splitRequest = request.split(" ");
 
-                int key = Integer.parseInt(splitRequest[0]);
-                String ip = splitRequest[1];
-                int port = Integer.parseInt(splitRequest[2]);
+            int key = Integer.parseInt(splitRequest[0]);
+            String ip = splitRequest[1];
+            int port = Integer.parseInt(splitRequest[2]);
 
+            // GetClient passes its own ip to nodes holding resources to be sent back
             String localhost = incomingFoundResourceSocket.getInetAddress().getLocalHost().toString();
             int index  = localhost.indexOf("/");
             localhost = localhost.substring(index+1,localhost.length());
 
-                GetMessage message = new GetMessage(key, localhost, ownPort);
+            GetMessage message = new GetMessage(key, localhost, ownPort);
 
-                Socket s = new Socket(ip, port);
-                ObjectOutputStream output = new ObjectOutputStream(s.getOutputStream());
-                output.writeObject(message);
-
-                output.close();
+            sendSerializedMessage(ip, port, message);
         }
         catch (UnknownHostException e)
         {
@@ -88,9 +84,72 @@ public class GetClient {
     }
 
     /**
-     * Validates a getmessage request String.
-     * @param input: User get request from console
-     * @return
+     * Listens for input using a server socket, incomingFoundResourceSocket.
+     * Incoming messages are deserialized from ObjectInputStream in deserializeIncomingMessage().
+     * The content is then validated and handled as a Put message in handleIncomingResource().
+     */
+    private void listenForIncomingResources()
+    {
+        try
+        {
+            while (true)
+            {
+                Socket socket = incomingFoundResourceSocket.accept();
+                deserializeIncomingMessage(socket);
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+            System.out.println("An IOException occurred when creating the socket.");
+        }
+        catch (ClassNotFoundException e)
+        {
+            e.printStackTrace();
+            System.out.println("The class of the serialized Object from ObjectInputStream could not be determined");
+        }
+    }
+
+    /**
+     * Deserializes the ObjectInputStream received from listening to a socket.
+     * The content is then validated as a PutMessage in handleIncomingResource().
+     * @param socket holding ObjectInputStream with message content
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    private void deserializeIncomingMessage(Socket socket) throws IOException, ClassNotFoundException
+    {
+        ObjectInputStream input = new ObjectInputStream(socket.getInputStream()); // Deserialize incoming Put message
+        if(input.readObject() != null)
+        {
+            Object object = input.readObject();
+            handleIncomingResource(object);
+        }
+        socket.close();
+    }
+
+    /**
+     * Validates message content deserialized in listenForIncomingResources() and checks whether it is a Put message.
+     * @param object message to check.
+     */
+    private void handleIncomingResource(Object object)
+    {
+        String message = "";
+        if(object.getClass().isInstance(message))
+        {
+            int key = ((PutMessage) object).getKey();
+            message = ((PutMessage) object).getMessage();
+            System.out.println("Received Put message");
+            System.out.println("Key: " + key);
+            System.out.println("Message: " + message);
+        }
+        else System.out.println("The requested message could not be displayed");
+    }
+
+    /**
+     * Validates the syntax of a get message command request.
+     * @param input: get request from user input in console
+     * @return true if get message is correct
      */
     private boolean isValid(String input)
     {
@@ -101,70 +160,20 @@ public class GetClient {
     }
 
     /**
-     * Listens for inputs from ObjectInputStream using Socket incomingFoundResourceSocket.
+     * Serializes a message by writing it to an ObjectOutputStream and sends it to a Node.
+     * @param ip of node with requested resource.
+     * @param port of node with requested resource.
+     * @param message GetMessage sent to node with requested resource.
+     * @throws IOException
      */
-    private void listenForIncomingResources()
+    private void sendSerializedMessage(String ip, int port, GetMessage message) throws IOException
     {
-        try
-        {
-            while (true)
-            {
-                Socket socket = incomingFoundResourceSocket.accept();
-                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-                Object object = input.readObject();
-
-                if (object instanceof PutMessage)
-                {
-                    int key = ((PutMessage) object).getKey();
-                    String message = ((PutMessage) object).getMessage();
-
-                    System.out.println("RECEIVED MESSAGE");
-                    System.out.println("Key: " + key);
-                    System.out.println("Message: " + message);
-
-                    //handleIncomingResource(object);
-                }
-
-                socket.close();
-            }
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-            System.out.println("An IOException occurred when creating the socket");
-        }
-        catch (ClassNotFoundException e)
-        {
-            e.printStackTrace();
-            System.out.println("The class of the serialized Object from ObjectInputStream could not be determined");
-        }
+        Socket socket = new Socket(ip, port);
+        ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+        output.writeObject(message);
+        output.close();
     }
 
-    /**
-     * Handles received input from listenForIncomingResources().
-     * Only handles inputs which are instance of String.
-     * Checks whether or not the received Object is of type String.
-     * If Object is of type String, the method prints the Object.toString() to the console.
-     * @param object
-     */
-    private void handleIncomingResource(Object object)
-    {
-
-        String message = "";
-        if(object.getClass().isInstance(message))
-        {
-            System.out.println();
-            message = object.toString();
-            System.out.println(message);
-        }
-        else
-            System.out.println("The requested message could not be displayed");
-    }
-
-    /**
-     * Main method
-     * @param args
-     */
     public static void main(String[] args)
     {
         try
@@ -174,7 +183,7 @@ public class GetClient {
         catch (IOException e)
         {
             e.printStackTrace();
-            System.out.println("An IOException occurred when creating the socket for the GetClient");
+            System.out.println("An IOException occurred when creating the socket for the GetClient.");
         }
     }
 
