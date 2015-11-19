@@ -20,7 +20,8 @@ public class GetClient {
      * @param port
      * @throws IOException
      */
-    public GetClient(int port) throws IOException {
+    public GetClient(int port) throws IOException
+    {
         ownPort = port;
         incomingFoundResourceSocket = new ServerSocket(port);
         initialize();
@@ -30,7 +31,8 @@ public class GetClient {
      * Initializes thread for listening for incoming resources.
      * Starts listening on the main thread for get message input from the console.
      */
-    private void initialize(){
+    private void initialize()
+    {
         Runnable incoming = this::listenForIncomingResources;
         Thread incomingTread = new Thread(incoming);
         incomingTread.start();
@@ -72,10 +74,14 @@ public class GetClient {
                 output.writeObject(message);
 
                 output.close();
-        }catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e)
+        {
             e.printStackTrace();
             System.out.println("The host could not be found");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
             System.out.println("An IOException occurred when creating the socket");
         }
@@ -99,13 +105,16 @@ public class GetClient {
      */
     private void listenForIncomingResources()
     {
-        try {
-            while (true) {
+        try
+        {
+            while (true)
+            {
                 Socket socket = incomingFoundResourceSocket.accept();
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
                 Object object = input.readObject();
 
-                if (object instanceof PutMessage) {
+                if (object instanceof PutMessage)
+                {
                     int key = ((PutMessage) object).getKey();
                     String message = ((PutMessage) object).getMessage();
 
@@ -138,7 +147,8 @@ public class GetClient {
      * If Object is of type String, the method prints the Object.toString() to the console.
      * @param object
      */
-    private void handleIncomingResource(Object object){
+    private void handleIncomingResource(Object object)
+    {
 
         String message = "";
         if(object.getClass().isInstance(message))
@@ -155,7 +165,8 @@ public class GetClient {
      * Main method
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         try
         {
             GetClient getClient = new GetClient(Integer.parseInt(args[0]));
@@ -166,4 +177,5 @@ public class GetClient {
             System.out.println("An IOException occurred when creating the socket for the GetClient");
         }
     }
+
 }

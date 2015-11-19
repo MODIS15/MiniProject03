@@ -5,23 +5,17 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 /*
-This PutClient is used to send resources (message, key) to a Node.
+The PutClient is used to send resources (message, key) to a Node.
 It takes as arguments the IP/port of a Node, an integer key and a string value (user input from terminal).
 The client then submits a PUT(key, value) message to the indicated node and terminates.
  */
 public class PutClient {
 
-    // Could optionally pass parameters directly as ip, port, message and key
     public PutClient() {
         while (true)
         {
             sendResourceMessage();
         }
-    }
-
-    public static void main(String[] args)
-    {
-        PutClient put = new PutClient();
     }
 
     /**
@@ -43,7 +37,7 @@ public class PutClient {
                 PutMessage message = new PutMessage(resourceKey, resourceInput,true);
                 System.out.println();
 
-                sendSerializedMessage(ip, Integer.parseInt(port),message);
+                sendSerializedMessage(ip, Integer.parseInt(port), message);
 
                 System.out.println("Message has been put.\n" +
                         "///////////Resetting...///////////");
@@ -70,6 +64,11 @@ public class PutClient {
         ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
         output.writeObject(message);
         output.close();
+    }
+
+    public static void main(String[] args)
+    {
+        PutClient put = new PutClient();
     }
 
 }
