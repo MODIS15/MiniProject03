@@ -405,19 +405,19 @@ public class CircleNode {
     private void handlePutMessage(PutMessage putMessage)
     {
         Integer key = putMessage.getKey();
-        String message = putMessage.getMessage();
+        String resource = putMessage.getResource();
         boolean original = putMessage.getOriginal(); //If the message is send from a putClient. Then it's original.
 
         if (original) //If it's original. Then it' should be put inside ownResources and a reference should be send to the right side.
         {
-            ownResources.put(key, message);
+            ownResources.put(key, resource);
 
             //Send resource to the right socket. If it exsist's.
             if (!rightSideIp.equals(""))
             {
                 try
                 {
-                    PutMessage newPutMessage = new PutMessage(key,message,false);
+                    PutMessage newPutMessage = new PutMessage(key,resource,false);
                     sendPutMessage(new Socket(rightSideIp,rightSidePort),newPutMessage);
                 }
                 catch (IOException e) {e.printStackTrace();}
@@ -425,7 +425,7 @@ public class CircleNode {
         }
         else //If it isn't original. Then it's a reference.
         {
-            refferenceresources.put(key, message);
+            refferenceresources.put(key, resource);
         }
     }
 
