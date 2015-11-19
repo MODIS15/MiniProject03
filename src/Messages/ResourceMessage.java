@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 /**
- * Created by Jakob_P_Holm on 17/11/2015.
+ * This message contains a resource stored in the network.
  */
 public class ResourceMessage extends Message implements Serializable {
 

@@ -10,7 +10,6 @@ import java.net.Socket;
 //import java.net.SocketException;
 //import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Jakob_P_Holm on 11/11/2015.
@@ -178,7 +177,7 @@ public class CircleNode {
                 else if (object instanceof PutMessage)
                 {
                     Integer key = ((PutMessage) object).getKey();
-                    String message = ((PutMessage) object).getMessage();
+                    String message = ((PutMessage) object).getResource();
                     boolean original = ((PutMessage) object).getOriginal();
                     if (original) {
                         System.out.println("RESIVED ORIGINAL PUTMESSAGE");

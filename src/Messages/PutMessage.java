@@ -2,15 +2,18 @@ package Messages;
 
 import java.io.Serializable;
 
+/**
+ * This resource is used to insert resources in the network by passing a resource with a given key.
+ */
 public class PutMessage extends Message implements Serializable{
     private int key;
-    private String message;
+    private String resource;
     private boolean original;
 
-    public PutMessage(int key, String message, boolean original){
+    public PutMessage(int key, String resource, boolean original){
         super(MessageTypeEnum.PutMessage);
         this.key = key;
-        this.message = message;
+        this.resource = resource;
         this.original = original;
     }
 
@@ -20,7 +23,7 @@ public class PutMessage extends Message implements Serializable{
         return key;
     }
 
-    public String getMessage(){
-        return message;
+    public String getResource(){
+        return resource;
     }
 }

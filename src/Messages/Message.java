@@ -3,9 +3,10 @@ package Messages;
 import java.io.Serializable;
 
 /**
- * Created by Jakob_P_Holm on 19/11/2015.
+ * This class functions as a base class for all different types of messages sent in the network.
  */
 public abstract class Message implements Serializable {
+
     private MessageTypeEnum messageType;
 
     public Message(MessageTypeEnum type) {
@@ -15,4 +16,5 @@ public abstract class Message implements Serializable {
     public MessageTypeEnum getMessageType() {
         return messageType;
     }
+
 }

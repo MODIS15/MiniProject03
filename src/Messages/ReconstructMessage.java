@@ -3,7 +3,7 @@ package Messages;
 import java.io.Serializable;
 
 /**
- * Created by Jakob_P_Holm on 15/11/2015.
+ * This message is used to reconstruct the circular network if it is broken due to a failing node (disconnect, crash etc).
  */
 public class ReconstructMessage extends Message implements Serializable
 {

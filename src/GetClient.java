@@ -35,7 +35,7 @@ public class GetClient {
         Runnable listenForMessage = this::listenForIncomingResources; // Indicates that method is runnable for this class
         Thread thread = new Thread(listenForMessage);
         thread.start();
-        System.out.println("Use the following syntax for creating a getMessage: ");
+        System.out.println("Use the following syntax for creating a getResource: ");
         System.out.println("\"getmessage\" key ip port");
 
         while(true)
@@ -138,7 +138,7 @@ public class GetClient {
         if(object.getClass().isInstance(message))
         {
             int key = ((PutMessage) object).getKey();
-            message = ((PutMessage) object).getMessage();
+            message = ((PutMessage) object).getResource();
             System.out.println("Received Put message");
             System.out.println("Key: " + key);
             System.out.println("Message: " + message);
