@@ -374,8 +374,9 @@ public class CircleNode {
     {
         try {
             //Wait time
-            Thread.sleep(1500);
+            Thread.sleep(3000);
             //Sends echo
+            System.out.println("ECHO!!!!!");
             sendEchoMessage(new Socket(rightSideIp, rightSidePort), new EchoMessage(false, ownPort));
             //If the thread / echo hasn't been terminated / returned before this. Then something is wrong.
             Thread.sleep(5000);
