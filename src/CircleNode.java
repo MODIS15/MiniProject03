@@ -10,35 +10,27 @@ import java.net.Socket;
 //import java.net.SocketException;
 //import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Created by Jakob_P_Holm on 11/11/2015.
+ * The CircleNode represents a node in a unstructured circular P2P network.
  */
 public class CircleNode {
 
-    //For all nodes
-    int ownPort;
+    private String hostIp, leftSideIp, rightSideIp;
+    private int ownPort, leftSidePort, rightSidePort;
+
     private HashMap<Integer, String> ownResources = new HashMap<>();
-    private HashMap<Integer, String> refferenceresources = new HashMap<>();
+    private HashMap<Integer, String> referencedResources = new HashMap<>();
     private ServerSocket inputServerSocket;
 
-    private String hostIp = "";
-
-    int leftSidePort;
-    String leftSideIp = "";
-
-    int rightSidePort;
-    String rightSideIp = "";
-
-    Thread echo = null;
-    boolean underConstruction = false;
+    private Thread echo;
+    private boolean underConstruction;
 
     public CircleNode (int port)
     {
         ownPort = port;
         setUpServer();
-        Runnable run = this::run;
+        Runnable run = this::listenToServerSocket;
         Thread thread = new Thread(run);
         thread.start();
     }
@@ -46,44 +38,44 @@ public class CircleNode {
     public CircleNode (int port, int _ortherPort, String _otherIP)
     {
         ownPort = port;
+        hostIp = ""; // Initially empty
+        leftSideIp = ""; // Initially empty
         rightSideIp = _otherIP;
         rightSidePort = _ortherPort;
         setUpServer();
 
         //Set up connection to others.
-        sendStartConnectessage();
+        sendStartConnectMessage();
 
-        Runnable run = this::run;
-        Thread thread = new Thread(run);
+
+        Runnable listen = this::listenToServerSocket;
+        Thread thread = new Thread(listen);
         thread.start();
     }
 
+    /**
+     * Creates a server socket with the node's own port.
+     */
     public void setUpServer()
     {
         try
         {
             inputServerSocket = new ServerSocket(ownPort);
-            hostIp = inputServerSocket.getInetAddress().getLocalHost().toString();
-            int index  = hostIp.indexOf("/");
-            hostIp = hostIp.substring(index+1,hostIp.length());
+            hostIp = inputServerSocket.getInetAddress().getLocalHost().getHostAddress();
         }
         catch (IOException e){e.printStackTrace();}
     }
 
-    public void sendStartConnectessage()
+    /**
+     *
+     */
+    public void sendStartConnectMessage()
     {
         try
         {
             Socket startSocket = new Socket(rightSideIp, rightSidePort);
 
-            String hostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
-            int index  = hostIP.indexOf("/");
-            hostIP = hostIP.substring(index+1,hostIP.length());
-
-            System.out.println(hostIP);
-            System.out.println(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
-
-            ConnectMessage connectMessage = new ConnectMessage("From",hostIP,ownPort);
+            ConnectMessage connectMessage = new ConnectMessage("From",hostIp,ownPort);
 
             ObjectOutputStream clientOutputStream = new ObjectOutputStream(startSocket.getOutputStream());
             clientOutputStream.writeObject(connectMessage);
@@ -100,7 +92,7 @@ public class CircleNode {
         else return null;
     }
 
-    public void run() {
+    public void listenToServerSocket() {
         try {
             while (true) {
                 Socket clientSocket = inputServerSocket.accept();
@@ -216,11 +208,11 @@ public class CircleNode {
         else //When there is more than one node
         {
                 Socket leftSocket;
-                if (!refferenceresources.isEmpty()) // Sends all inherited references to new middle node
+                if (!referencedResources.isEmpty()) // Sends all inherited references to new middle node
                 {
                     leftSocket = new Socket(ip, port);
-                    sendResourceMessage(leftSocket, new ResourceMessage(refferenceresources));
-                    refferenceresources.clear();
+                    sendResourceMessage(leftSocket, new ResourceMessage(referencedResources));
+                    referencedResources.clear();
                 }
 
                 //Inform the left side, that is should set it's rightside to the new node.
@@ -284,20 +276,20 @@ public class CircleNode {
             if (lostPort == leftSidePort) //If the leftside equals the missing / lost port. Then it should try to reconnect with the discover.
             {
                 //Sends all of it's refferences to the right, since it has inheriented all of it's references.
-                if (!refferenceresources.isEmpty()) {
+                if (!referencedResources.isEmpty()) {
                     sendResourceMessage(new Socket(rightSideIp,rightSidePort), new ResourceMessage
                                     (
-                                            refferenceresources
+                                            referencedResources
                                     )
                     );
 
                     String message = "";
-                    for (Integer key : refferenceresources.keySet()) // Removes all of it's references. Since it's inside of ownResources.
+                    for (Integer key : referencedResources.keySet()) // Removes all of it's references. Since it's inside of ownResources.
                     {
-                        message = refferenceresources.get(key);
+                        message = referencedResources.get(key);
                         ownResources.put(key, message);
                     }
-                    refferenceresources.clear();
+                    referencedResources.clear();
                 }
 
                 String localhost = inputServerSocket.getInetAddress().getLocalHost().toString();
@@ -397,7 +389,7 @@ public class CircleNode {
         for (int key : moreRefs.keySet())
         {
             String message = moreRefs.get(key);
-            refferenceresources.put(key,message);
+            referencedResources.put(key, message);
         }
         if (underConstruction) {underConstruction = false;}
     }
@@ -425,7 +417,7 @@ public class CircleNode {
         }
         else //If it isn't original. Then it's a reference.
         {
-            refferenceresources.put(key, resource);
+            referencedResources.put(key, resource);
         }
     }
 
@@ -444,9 +436,9 @@ public class CircleNode {
                 message = ownResources.get(key);
                 sendPutMessage(getClientSocket, new PutMessage(key, message, false));
             }
-            else if (refferenceresources.containsKey(key)) // Checks if refferenceResources has the key
+            else if (referencedResources.containsKey(key)) // Checks if refferenceResources has the key
             {
-                message = refferenceresources.get(key);
+                message = referencedResources.get(key);
                 sendPutMessage(getClientSocket, new PutMessage(key, message, false));
             }
             else //Otherwise propagate message to the rightside node.
@@ -468,15 +460,15 @@ public class CircleNode {
             echo = null;
             rightSideIp = "";
             leftSideIp = "";
-            if (!refferenceresources.isEmpty())
+            if (!referencedResources.isEmpty())
             {
                 String message = "";
-                for (int key : refferenceresources.keySet())
+                for (int key : referencedResources.keySet())
                 {
-                    message = refferenceresources.get(key);
+                    message = referencedResources.get(key);
                     ownResources.put(key,message);
                 }
-                refferenceresources.clear();
+                referencedResources.clear();
             }
 
         }
