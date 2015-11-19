@@ -121,7 +121,6 @@ public class SimpleCircleNode
 
                     if (foreignport == leftSidePort)
                     {
-
                         String localhost = inputServerSocket.getInetAddress().getLocalHost().toString();
                         int index  = localhost.indexOf("/");
                         localhost = localhost.substring(index+1,localhost.length());

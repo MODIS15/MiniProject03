@@ -101,6 +101,7 @@ public class CircleNode {
                 ObjectInputStream input = new ObjectInputStream(clientSocket.getInputStream());
                 Object object = input.readObject();
 
+
                 if (object instanceof ConnectMessage)
                 {
                     System.out.println("Received connect message from " + clientSocket.getInetAddress());
