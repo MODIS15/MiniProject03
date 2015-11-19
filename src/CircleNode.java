@@ -186,8 +186,6 @@ public class CircleNode {
         try {
         if (rightSideIp.equals("") && leftSideIp.equals("")) // When there only is one node
         {
-            System.out.println("INSIDE");
-
             //Sets the sender's ip and port to it's right and left side
             rightSideIp = ip;   rightSidePort = port;
             leftSideIp = ip;    leftSidePort = port;
