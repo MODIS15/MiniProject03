@@ -364,6 +364,7 @@ public class CircleNode {
             echo.interrupt();
             echo = null;
         }
+        System.out.println("CALL!!!!!");
         Runnable echoSend = this::sendEcho;
         echo = new Thread(echoSend);
         echo.start();
