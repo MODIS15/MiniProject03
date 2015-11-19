@@ -186,12 +186,16 @@ public class CircleNode {
         try {
         if (rightSideIp.equals("") && leftSideIp.equals("")) // When there only is one node
         {
+            System.out.println("INSIDE");
+            System.out.println(port + " " + ip);
+
             //Sets the sender's ip and port to it's right and left side
             rightSideIp = ip;   rightSidePort = port;
             leftSideIp = ip;    leftSidePort = port;
 
                 //Sends information back that it's should put it's left side to this node.
                 Socket rightSocket = new Socket(rightSideIp, rightSidePort);
+                System.out.println("Create socket");
 
                 String hostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
                 int index  = hostIP.indexOf("/");
