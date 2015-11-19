@@ -180,12 +180,10 @@ public class CircleNode {
                         System.out.println("RESIVED ORIGINAL PUTMESSAGE");
                         ownResources.put(key, message);
                         System.out.println("Key: " + key + " Message: " + message);
-                        System.out.println(ownResources.get(key));
 
                         //Send resource to the right socket. If it exsists
                         if (!rightSideIp.equals(""))
                         {
-                            System.out.println("SEND PUTMESSAGE");
                             PutMessage putMessage = new PutMessage(key,message,false);
                             sendPutMessage(new Socket(rightSideIp,rightSidePort),putMessage);
                         }
@@ -201,25 +199,12 @@ public class CircleNode {
                 else if (object instanceof ResourceMessage)
                 {
                     HashMap<Integer,String> moreRefs = ((ResourceMessage) object).getStoredResource();
-                    if (underConstruction)
+                    for (int key : moreRefs.keySet())
                     {
-
-                        for (int key : moreRefs.keySet())
-                        {
-                            String message = moreRefs.get(key);
-                            refferenceresources.put(key,message);
-                        }
-
-                        underConstruction = false;
+                        String message = moreRefs.get(key);
+                        refferenceresources.put(key,message);
                     }
-                    else //If the node isn't under construction. Then it's just going to "inherited" more information.
-                    {
-                        for (int key : moreRefs.keySet())
-                        {
-                            String message = moreRefs.get(key);
-                            refferenceresources.put(key,message);
-                        }
-                    }
+                    if (underConstruction) {underConstruction = false;}
                 }
                 else if (object instanceof GetMessage)
                 {
@@ -228,18 +213,20 @@ public class CircleNode {
                     String ip = ((GetMessage) object).getIp();
 
                     String message = "";
+                    Socket getClientSocket = new Socket(ip,port);
                     if (ownResources.containsKey(key)) // Checks if ownResources has the key
                     {
                         message = ownResources.get(key);
-                        sendPutMessage(new Socket(ip,port),new PutMessage(key,message,false));
+                        sendPutMessage(getClientSocket,new PutMessage(key,message,false));
                     }
                     else if (refferenceresources.containsKey(key)) // Checks if refferencesources has the key
                     {
                         message = refferenceresources.get(key);
-                        sendPutMessage(new Socket(ip,port),new PutMessage(key,message,false));
+                        sendPutMessage(getClientSocket,new PutMessage(key,message,false));
                     }
                     else //Otherwise send to the right.
                     {
+                        System.out.println("Send get-message to the right");
                         sendGetMessage(new Socket(rightSideIp,rightSidePort),new GetMessage(key,ip,port));
                     }
 

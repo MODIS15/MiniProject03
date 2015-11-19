@@ -35,19 +35,14 @@ public class GetClient {
         Thread incomingTread = new Thread(incoming);
         incomingTread.start();
         System.out.println("Use the following syntax for creating a getMessage:");
+        System.out.println("Ip and port are node's ip and port");
         System.out.println("key ip port");
 
         while(true)
         {
             String request = System.console().readLine().toLowerCase().trim();
             getResource(request);
-            /*
-            String request = System.console().readLine().toLowerCase().trim();
-            if(isValid(request))
-            {
-                getResource(request);
-            }
-            */
+            System.out.println("Do agian");
         }
     }
 
@@ -163,8 +158,7 @@ public class GetClient {
     public static void main(String[] args) {
         try
         {
-            System.out.println("Please input the port for your GetClient");
-            GetClient get = new GetClient(Integer.parseInt(args[0]));
+            GetClient getClient = new GetClient(Integer.parseInt(args[0]));
         }
         catch (IOException e)
         {
