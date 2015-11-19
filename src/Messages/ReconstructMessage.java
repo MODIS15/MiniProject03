@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by Jakob_P_Holm on 15/11/2015.
  */
-public class ReconstructMessage implements Serializable
+public class ReconstructMessage extends Message implements Serializable
 {
     private String lostSideIp;
     private int lostSidePort;
@@ -14,6 +14,7 @@ public class ReconstructMessage implements Serializable
 
     public ReconstructMessage(String lostSideIp, int lostSidePort,String discoverIp,int discoverPort)
     {
+        super(MessageTypeEnum.ReconstructMessage);
         this.lostSideIp = lostSideIp;
         this.lostSidePort = lostSidePort;
         this.discoverIp = discoverIp;

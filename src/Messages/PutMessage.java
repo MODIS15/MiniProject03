@@ -2,12 +2,13 @@ package Messages;
 
 import java.io.Serializable;
 
-public class PutMessage implements Serializable{
+public class PutMessage extends Message implements Serializable{
     private int key;
     private String message;
     private boolean original;
 
     public PutMessage(int key, String message, boolean original){
+        super(MessageTypeEnum.PutMessage);
         this.key = key;
         this.message = message;
         this.original = original;
