@@ -193,6 +193,8 @@ public class CircleNode {
             rightSideIp = ip;   rightSidePort = port;
             leftSideIp = ip;    leftSidePort = port;
 
+            System.out.println(rightSidePort + " " + rightSideIp);
+
                 //Sends information back that it's should put it's left side to this node.
                 Socket rightSocket = new Socket(rightSideIp, rightSidePort);
                 System.out.println("Create socket");
@@ -327,12 +329,14 @@ public class CircleNode {
         boolean echoMessageContent = echoMessage.getStillAlive();
         if (echoMessageContent == false)
         {
+            System.out.println("SEND ECHO RETURN");
             //Send echo-message return
             try {sendEchoMessage(new Socket(leftSideIp,leftSidePort), new EchoMessage(true,ownPort));}
             catch (IOException e){e.printStackTrace();}
         }
         else
         {
+            System.out.println("START NEW ECHO");
             //Receive echo-message - Stop echo
             echo.interrupt();
             echo = null;
@@ -457,7 +461,6 @@ public class CircleNode {
         System.out.println(rightSidePort + "=" + leftSidePort + " " + rightSideIp + "=" + leftSideIp);
         if (rightSidePort == leftSidePort)
         {
-            System.out.println("STOP");
             echo.interrupt();
             echo = null;
             rightSideIp = "";
