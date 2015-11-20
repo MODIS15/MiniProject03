@@ -118,6 +118,7 @@ public class Node {
         try {
             while (true) {
                 Socket clientSocket = inputServerSocket.accept();
+                System.out.println("Received connection from - IP:"+ clientSocket.getInetAddress() + " Port " + clientSocket.getPort());
                 Message inputMessage = readMessageFromInputStream(clientSocket); //Get incoming messages
 
                 if (inputMessage == null) return;
@@ -194,6 +195,8 @@ public class Node {
         {
             ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
             clientOutputStream.writeObject(message);
+            clientOutputStream.close();
+
         }
         catch (IOException e){e.printStackTrace();}
     }

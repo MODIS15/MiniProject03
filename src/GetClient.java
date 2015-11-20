@@ -1,4 +1,5 @@
 import Messages.GetMessage;
+import Messages.Message;
 import Messages.PutMessage;
 import NodeUtils.UserInput;
 
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
 public class GetClient {
 
     private ServerSocket incomingFoundResourceSocket;
+    Thread listenThread;
 
     private int ownPort;
 
@@ -35,14 +37,17 @@ public class GetClient {
      */
     private void initialize()
     {
+        System.out.println("Listening...");
         Runnable listenForMessage = this::listenForIncomingResources; // Indicates that method is runnable for this class
-        Thread thread = new Thread(listenForMessage);
-        thread.start();
+        listenThread = new Thread(listenForMessage);
+        listenThread.start();
         System.out.println("Welcome to GetClient");
+
 
         while(true)
         {
             getResource();
+            System.out.println("Done.");
         }
     }
 
@@ -94,6 +99,7 @@ public class GetClient {
             while (true)
             {
                 Socket socket = incomingFoundResourceSocket.accept();
+                System.out.println("Received connection from - IP:"+ socket.getInetAddress() + " Port " + socket.getPort());
                 deserializeIncomingMessage(socket);
             }
         }
@@ -118,12 +124,11 @@ public class GetClient {
      */
     private void deserializeIncomingMessage(Socket socket) throws IOException, ClassNotFoundException
     {
-        ObjectInputStream input = new ObjectInputStream(socket.getInputStream()); // Deserialize incoming Put message
-        if(input.readObject() != null)
-        {
-            Object object = input.readObject();
-            handleIncomingResource(object);
-        }
+
+        ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+        Object object = inputStream.readObject();  // Deserialize incoming Put message
+        handleIncomingResource(object);
+
         socket.close();
     }
 
@@ -134,7 +139,7 @@ public class GetClient {
     private void handleIncomingResource(Object object)
     {
         String message = "";
-        if(object.getClass().isInstance(message))
+        if(object instanceof Message)
         {
             int key = ((PutMessage) object).getKey();
             message = ((PutMessage) object).getResource();
@@ -159,7 +164,11 @@ public class GetClient {
         Socket socket = new Socket(ip, port);
         ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
         output.writeObject(message);
+        output.flush();
         output.close();
+        System.out.println("Sending get request.");
+
+
     }
 
     public static void main(String[] args)
