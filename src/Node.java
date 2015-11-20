@@ -596,8 +596,8 @@ public class Node {
             System.out.println("Neighbour is alive "+rightSide.toString()+"\n");
         }
         catch (DeadException e) {
-            //System.out.println(e.getMessage());
-            //reconstruct();
+            System.out.println(e.getMessage());
+            reconstruct();
         }
     }
 
