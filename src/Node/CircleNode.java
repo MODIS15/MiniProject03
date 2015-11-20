@@ -211,7 +211,8 @@ public class CircleNode {
     {
         try
         {
-            if (rightSide.getIp().equals("") && leftSide.getIp().equals("")) // Only one node in network
+            // Only one node in network
+            if (rightSide.getIp().equals("") && leftSide.getIp().equals(""))
             {
                 System.out.println("INSIDE");
                 System.out.println(newPort + " " + newIp);
@@ -237,7 +238,9 @@ public class CircleNode {
                     sendMessage(rightSide.getSocket(), new ResourceMessage(ownResources));
                 }
             }
-            else //When there is more than one node
+
+            //When there is more than one node in network.
+            else
             {
                 SocketInfo newNode = new SocketInfo(newIp,newPort) ;
                 if (!referencedResources.isEmpty()) // Sends all inherited references to new middle node
@@ -337,13 +340,8 @@ public class CircleNode {
             }
             else //Pass ip and port information to right side
             {
-                // Can be removed
-                ReconstructMessage newReconstructMessage = new ReconstructMessage(
-                        lostNode.getIp(),
-                        lostNode.getPort(),
-                        discoverNode.getIp(),
-                        discoverNode.getPort());
-                sendMessage(leftSide.getSocket(), newReconstructMessage);
+
+                sendMessage(leftSide.getSocket(), reconstructMessage);
             }
         }catch (IOException e){e.printStackTrace();}
     }
@@ -533,7 +531,7 @@ public class CircleNode {
                         ownSocket.getPort()
                 );
 
-                sendMessage(new Socket(leftSideIp, leftSidePort), reconstructMessage);
+                sendMessage(leftSide.getSocket(), reconstructMessage);
 
             } catch (IOException e) {
             }
