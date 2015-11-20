@@ -18,7 +18,7 @@ import java.net.Socket;
  * IT was used to demo a circle network for the group.
  *  @deprecated
  */
-public class SimpleCircleNode
+public class SimpleCircleNodeDEPRICATED
 {
     //For all nodes
     int ownPort;
@@ -32,7 +32,7 @@ public class SimpleCircleNode
 
     Thread echo = null;
 
-    public SimpleCircleNode (int port)
+    public SimpleCircleNodeDEPRICATED(int port)
     {
         ownPort = port;
         setUpServer();
@@ -50,7 +50,7 @@ public class SimpleCircleNode
 
     }
 
-    public SimpleCircleNode (int port, int _ortherPort, String _otherIP)
+    public SimpleCircleNodeDEPRICATED(int port, int _ortherPort, String _otherIP)
     {
         ownPort = port;
         rightSideIp = _otherIP;
@@ -350,11 +350,11 @@ public class SimpleCircleNode
     {
         if (args.length == 1) //For the first port only
         {
-            SimpleCircleNode SimplecircleNode = new SimpleCircleNode(Integer.parseInt(args[0]));
+            SimpleCircleNodeDEPRICATED SimplecircleNode = new SimpleCircleNodeDEPRICATED(Integer.parseInt(args[0]));
         }
         else //For all other node there after.
         {
-            SimpleCircleNode SimplecircleNode = new SimpleCircleNode(Integer.parseInt(args[0]),Integer.parseInt(args[1]),args[2]);
+            SimpleCircleNodeDEPRICATED SimplecircleNode = new SimpleCircleNodeDEPRICATED(Integer.parseInt(args[0]),Integer.parseInt(args[1]),args[2]);
         }
     }
 }
