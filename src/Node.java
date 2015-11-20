@@ -118,11 +118,13 @@ public class Node {
         try {
             while (true) {
                 Socket clientSocket = inputServerSocket.accept();
-                System.out.println("Received connection from - IP:"+ clientSocket.getInetAddress() + " Port " + clientSocket.getPort());
                 Message inputMessage = readMessageFromInputStream(clientSocket); //Get incoming messages
 
                 //Creates a new thread whenever a message is to be handled. To avoid bottlenecks
                 if (inputMessage == null) return;
+                if(!(inputMessage instanceof EchoMessage))
+                    System.out.println("Received connection from - IP:"+ clientSocket.getInetAddress() + " Port " + clientSocket.getPort());
+
                 MessageHandler messageHandler = new MessageHandler(inputMessage);
                 handleMessage(inputMessage);
             }
@@ -315,9 +317,6 @@ public class Node {
             // Only one node in network
             if (rightSide.getIp().equals("") && leftSide.getIp().equals(""))
             {
-                System.out.println("INSIDE");
-                System.out.println(newPort + " " + newIp);
-
                 //Sets sender ip and port to right and left side
                 rightSide = new SocketInfo(newIp,newPort);
                 leftSide = new SocketInfo(newIp,newPort);
@@ -400,8 +399,7 @@ public class Node {
     private void handleConnectClosureMessage(String ip, int port)
     {
         leftSide = new SocketInfo(ip,port);
-        if (underConstruction)
-            underConstruction = false;
+        if (underConstruction) underConstruction = false;
     }
 
     /**
@@ -457,14 +455,12 @@ public class Node {
         boolean echoMessageContent = echoMessage.getStillAlive();
         if (echoMessageContent == false)
         {
-            System.out.println("SEND ECHO RETURN");
             //Send echo-message return
             try {sendMessage(leftSide.getSocket(), new EchoMessage(true,ownSocket.getPort()));}
             catch (IOException e){e.printStackTrace();}
         }
         else
         {
-            System.out.println("START NEW ECHO");
             //Receive echo-message - Stop echo
             echo.interrupt();
             echo = null;
@@ -561,7 +557,6 @@ public class Node {
      */
     private void initiateNewEcho()
     {
-        System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
         if (echo != null)
         {
             echo.interrupt();
@@ -582,7 +577,6 @@ public class Node {
         try
         {
             Thread.sleep(3000); // Time out
-            System.out.println("Sent Heartbeat.");
             sendMessage(rightSide.getSocket(), new EchoMessage(false, ownSocket.getPort()));
             Thread.sleep(5000);
             throw new DeadException();
@@ -590,6 +584,7 @@ public class Node {
         catch (IOException e)
         {
             System.out.println("An IOException occurred : ALERT...");
+            System.out.println("Reconstructing");
             reconstruct();
         }
         catch (InterruptedException e) {
@@ -597,6 +592,7 @@ public class Node {
         }
         catch (DeadException e) {
             System.out.println(e.getMessage());
+            System.out.println("Reconstructing");
             reconstruct();
         }
     }
