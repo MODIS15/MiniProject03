@@ -1,4 +1,5 @@
 import Messages.*;
+import NodeUtils.DeadException;
 import NodeUtils.SocketInfo;
 import NodeUtils.UserInput;
 
@@ -87,6 +88,7 @@ public class Node {
 
             ownSocket.setPort(port);
             inputServerSocket = new ServerSocket(ownSocket.getPort());
+            updateCurrentNodeIp();
 
             System.out.println("Node Initiated.");
         }
@@ -563,6 +565,7 @@ public class Node {
             System.out.println("Sent Heartbeat.");
             sendMessage(rightSide.getSocket(), new EchoMessage(false, ownSocket.getPort()));
             Thread.sleep(5000);
+            throw new DeadException();
         }
         catch (IOException e)
         {
@@ -570,11 +573,13 @@ public class Node {
             reconstruct();
         }
         catch (InterruptedException e) {
-            System.out.println("Neighbour is alive");
+            System.out.println("Neighbour is alive "+rightSide.toString()+"\n");
+        }
+        catch (DeadException e) {
+            //System.out.println(e.getMessage());
+            //reconstruct();
         }
     }
-
-
 
 
 
