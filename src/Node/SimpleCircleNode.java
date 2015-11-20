@@ -14,7 +14,9 @@ import java.net.Socket;
 
 
 /**
- * Created by Jakob_P_Holm on 19/11/2015.
+ * This is no longer used. It was an old simple implementation of a circle network.
+ * IT was used to demo a circle network for the group.
+ *  @deprecated
  */
 public class SimpleCircleNode
 {

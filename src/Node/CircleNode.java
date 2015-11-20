@@ -20,18 +20,21 @@ import java.util.Map;
  */
 public class CircleNode {
 
-    private String hostIp, leftSideIp, rightSideIp;
     private SocketInfo ownSocket, leftSide, rightSide;
-
-    private int ownPort, leftSidePort, rightSidePort;
+    private ServerSocket inputServerSocket;
 
     private Map<Integer, String> ownResources = new HashMap<>();
     private Map<Integer, String> referencedResources = new HashMap<>();
-    private ServerSocket inputServerSocket;
 
     private Thread echo;
     private boolean underConstruction;
 
+    //Constructors
+
+    /**
+     * Constructor used when it is the first node in network
+     * @param port for serversocket
+     */
     public CircleNode (int port)
     {
         setUpServer(port);
@@ -40,20 +43,36 @@ public class CircleNode {
         thread.start();
     }
 
-    public CircleNode (int port, int _ortherPort, String _otherIP)
+    /**
+     * Constructor used when connecting to existing network.
+     * @param port of server socket
+     * @param _otherPort port of existing node
+     * @param _otherIP ip of existing node
+     */
+    public CircleNode (int port, int _otherPort, String _otherIP)
     {
         ownSocket = new SocketInfo("",-1);// Initially empty
         leftSide = new SocketInfo("",-1); // Initially empty
-        rightSide = new SocketInfo(_otherIP,_ortherPort);
+        rightSide = new SocketInfo(_otherIP,_otherPort);
         setUpServer(port);
 
-        //Set up connection to others.
         ConnectToExistingNode();
 
-
         Runnable listen = this::listenToServerSocket;
-        Thread thread = new Thread(listen);
-        thread.start();
+        Thread listenServerSocket = new Thread(listen);
+        listenServerSocket.start();
+    }
+
+
+
+    //Connection and network Methods
+
+    /**
+     * Used to update current nodes ip in case it was changed.
+     * @throws UnknownHostException
+     */
+    private void updateCurrentNodeIp() throws UnknownHostException {
+        ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
     }
 
     /**
@@ -64,7 +83,7 @@ public class CircleNode {
         try
         {
             ownSocket.setPort(port);
-            inputServerSocket = new ServerSocket(ownPort);
+            inputServerSocket = new ServerSocket(ownSocket.getPort());
             ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
         }
         catch (IOException e){e.printStackTrace();}
@@ -86,22 +105,6 @@ public class CircleNode {
         catch (IOException e){e.printStackTrace();}
     }
 
-    /***
-     * Gets/retrieve a message from an input stream. If the incoming object is a message.
-     * @param s
-     * @return
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    private Message readMessageFromInputStream(Socket s) throws IOException, ClassNotFoundException {
-        if(s==null) return null;
-        ObjectInputStream inputStream = new ObjectInputStream(s.getInputStream());
-        Object object = inputStream.readObject();
-
-        if(object instanceof Message) return (Message)object;
-        else return null;
-    }
-
     /**
      * Listen to currents node server socket for incoming connection (From other nodes).
      */
@@ -119,6 +122,96 @@ public class CircleNode {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Reconstructs the circular network in case of node failures (crash, disconnect etc.)
+     * This is done by sending a message to the right side node that will eventually reach the left side end node.
+     * If there is no nodes left, it will set its right and left to itself.
+     */
+    private void reconstruct()
+    {
+        underConstruction = true;
+        System.out.println("Comparing right and left: "+rightSide.getPort() + "=" + leftSide.getPort() + " " + rightSide.getIp() + "=" + leftSide.getIp());
+
+        //There is only one node left in system
+        if (rightSide.equals(leftSide))
+        {
+            System.out.println("STOP");
+            echo.interrupt();
+            echo = null;
+            rightSide.setIp("");
+            leftSide.setIp("");
+            if (!referencedResources.isEmpty())
+            {
+                String message;
+                for (int key : referencedResources.keySet())
+                {
+                    message = referencedResources.get(key);
+                    ownResources.put(key,message);
+                }
+                referencedResources.clear();
+            }
+
+        }
+
+        //Sends a reconstruct message to right node.
+        else
+        {
+            try {
+                updateCurrentNodeIp();
+
+                ReconstructMessage reconstructMessage = new ReconstructMessage(
+                        rightSide.getIp(),
+                        rightSide.getPort(),
+                        ownSocket.getIp(),
+                        ownSocket.getPort()
+                );
+
+                sendMessage(leftSide.getSocket(), reconstructMessage);
+
+            } catch (IOException e) {
+            }
+        }
+    }
+
+
+    //Message methods
+
+    /**
+     * Sends a serialized message to a given node.
+     * @param socket endpoint of node to which message is sent
+     * @param message message sent
+     */
+    private void sendMessage(Socket socket, Message message)
+    {
+        try
+        {
+            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            clientOutputStream.writeObject(message);
+        }
+        catch (IOException e){e.printStackTrace();}
+    }
+
+    /***
+     * Gets/retrieve a message from an input stream. If the incoming object is a message.
+     * @param s
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    private Message readMessageFromInputStream(Socket s) throws IOException, ClassNotFoundException {
+        if(s==null) return null;
+        ObjectInputStream inputStream = new ObjectInputStream(s.getInputStream());
+        Object object = inputStream.readObject();
+
+        if(object instanceof Message) return (Message)object;
+        else return null;
+    }
+
+
+
+
+    //Message Handlers
 
     /**
      * This method is used to handle different message types appropriately.
@@ -155,21 +248,6 @@ public class CircleNode {
     }
 
     /**
-     * Sends a serialized message to a given node.
-     * @param socket endpoint of node to which message is sent
-     * @param message message sent
-     */
-    private void sendMessage(Socket socket, Message message)
-    {
-        try
-        {
-            ObjectOutputStream clientOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            clientOutputStream.writeObject(message);
-        }
-        catch (IOException e){e.printStackTrace();}
-    }
-
-    /**
      * Determines how nodes are placed in the network based on the state of the joining process.
      * @param connectMessage message added in network
      */
@@ -197,9 +275,6 @@ public class CircleNode {
         System.out.println("rightside: " + leftSide.getPort());
     }
 
-    private void updateCurrentNodeIp() throws UnknownHostException {
-        ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
-    }
 
     /**
      * Handles a From connect message used to join a network initially.
@@ -221,7 +296,7 @@ public class CircleNode {
                 rightSide = new SocketInfo(newIp,newPort);
                 leftSide = new SocketInfo(newIp,newPort);
 
-                System.out.println("Connecting to Rightside - info: "+ rightSide.toString());
+                System.out.println("Connecting to RightSide - info: "+ rightSide.toString());
 
                 //Send back to new node that it should put left side to this node.
                 Socket rightSocket = rightSide.getSocket();
@@ -299,7 +374,8 @@ public class CircleNode {
     private void handleConnectClosureMessage(String ip, int port)
     {
         leftSide = new SocketInfo(ip,port);
-        if (underConstruction) {underConstruction = false; } // REMOVE?
+        if (underConstruction)
+            underConstruction = false;
     }
 
     /**
@@ -340,7 +416,6 @@ public class CircleNode {
             }
             else //Pass ip and port information to right side
             {
-
                 sendMessage(leftSide.getSocket(), reconstructMessage);
             }
         }catch (IOException e){e.printStackTrace();}
@@ -358,7 +433,7 @@ public class CircleNode {
         {
             System.out.println("SEND ECHO RETURN");
             //Send echo-message return
-            try {sendMessage(leftSide.getSocket(), new EchoMessage(true,ownPort));}
+            try {sendMessage(leftSide.getSocket(), new EchoMessage(true,ownSocket.getPort()));}
             catch (IOException e){e.printStackTrace();}
         }
         else
@@ -372,54 +447,13 @@ public class CircleNode {
         }
     }
 
-
-    /**
-     * Repeatedly sends an echo heartbeat on a new thread by calling the sendEcho() method.
-     */
-    private void initiateNewEcho()
-    {
-        System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
-        if (echo != null)
-        {
-            echo.interrupt();
-            echo = null;
-        }
-        Runnable echoSend = this::sendEcho;
-        echo = new Thread(echoSend);
-        echo.start();
-    }
-
-    /**
-     * Sends out an echo heartbeat to the right side neighbor node asking if it is alive within a given time out.
-     * If the echo has not terminated within time out something is wrong.
-     * Note that is has not been implemented for left side nodes.
-     */
-    public void sendEcho()
-    {
-        try
-        {
-            Thread.sleep(3000); // Time out
-            System.out.println("Sent Heartbeat.");
-            sendMessage(rightSide.getSocket(), new EchoMessage(false, ownPort));
-            Thread.sleep(5000);
-        }
-        catch (IOException e)
-        {
-            System.out.println("An IOException occurred : ALERT...");
-            reconstruct();
-        }
-        catch (InterruptedException e) {
-            System.out.println("Neighbour is alive");
-        }
-    }
-
     /**
      * Handles a ResourceMessage holding several resources by adding them to the node's referenced resources.
      * @param resourceMessage HashMap with several resources
      */
     public void handleResourceMessage(ResourceMessage resourceMessage)
     {
-        HashMap<Integer,String> moreRefs = resourceMessage.getStoredResource();
+        Map<Integer, String> moreRefs = resourceMessage.getStoredResource();
         for (int key : moreRefs.keySet())
         {
             String message = moreRefs.get(key);
@@ -443,12 +477,12 @@ public class CircleNode {
             ownResources.put(key, resource);
 
 
-            if (!rightSideIp.equals("")) // Send reference to right node socket if it exists
+            if (!rightSide.getIp().equals("")) // Send reference to right node socket if it exists
             {
                 try
                 {
                     PutMessage newPutMessage = new PutMessage(key,resource,false);
-                    sendMessage(new Socket(rightSideIp,rightSidePort),newPutMessage);
+                    sendMessage(rightSide.getSocket(),newPutMessage);
                 }
                 catch (IOException e) {e.printStackTrace();}
             }
@@ -492,53 +526,70 @@ public class CircleNode {
         catch (IOException e) {e.printStackTrace();}
     }
 
+
+
+    //Echo Methods
+
     /**
-     * Reconstructs the circular network in case of node failures (crash, disconnect etc.)
-     * This is done by sending a message to the left side node that will eventually reach the right side node.
+     * Repeatedly sends an echo heartbeat on a new thread by calling the sendEcho() method.
      */
-    private void reconstruct()
+    private void initiateNewEcho()
     {
-        underConstruction = true;
-        System.out.println("Comparing right and left: "+rightSide.getPort() + "=" + leftSide.getPort() + " " + rightSide.getIp() + "=" + leftSide.getIp());
-        if (rightSidePort == leftSidePort)
+        System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
+        if (echo != null)
         {
-            System.out.println("STOP");
             echo.interrupt();
             echo = null;
-            rightSide.setIp("");
-            leftSide.setIp("");
-            if (!referencedResources.isEmpty())
-            {
-                String message;
-                for (int key : referencedResources.keySet())
-                {
-                    message = referencedResources.get(key);
-                    ownResources.put(key,message);
-                }
-                referencedResources.clear();
-            }
-
         }
-        else
+        Runnable echoSend = this::sendEcho;
+        echo = new Thread(echoSend);
+        echo.start();
+    }
+
+    /**
+     * Sends out an echo heartbeat to the right side neighbor node asking if it is alive within a given time out.
+     * If the echo has not terminated within time out something is wrong.
+     * Note that is has not been implemented for left side nodes.
+     */
+    public void sendEcho()
+    {
+        try
         {
-            try {
-                updateCurrentNodeIp();
-
-                ReconstructMessage reconstructMessage = new ReconstructMessage(
-                        rightSide.getIp(),
-                        rightSide.getPort(),
-                        lostHostIP, //TODO FIX
-                        ownSocket.getPort()
-                );
-
-                sendMessage(leftSide.getSocket(), reconstructMessage);
-
-            } catch (IOException e) {
-            }
+            Thread.sleep(3000); // Time out
+            System.out.println("Sent Heartbeat.");
+            sendMessage(rightSide.getSocket(), new EchoMessage(false, ownSocket.getPort()));
+            Thread.sleep(5000);
+        }
+        catch (IOException e)
+        {
+            System.out.println("An IOException occurred : ALERT...");
+            reconstruct();
+        }
+        catch (InterruptedException e) {
+            System.out.println("Neighbour is alive");
         }
     }
 
 
+
+
+
+
+    /**
+     * To create a new node write this into terminal:
+     * - First node in system
+     *  Java CircleNode ServerSocketPort
+     *  eg:
+     *  Java CircleNode 66
+     *
+     * - Not first node in system
+     * Java CircleNode ServerSocketPort ExistingNodeIP ExistingNodePort
+     * eg:
+     * Java CircleNode 66 55 127.0.0.1
+     *
+     *
+     * @param args
+     */
     public static void main(String[] args)
     {
         if (args.length == 1) //For the first port only
