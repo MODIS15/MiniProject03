@@ -126,7 +126,7 @@ public class Node {
                     System.out.println("Received connection from - IP:"+ clientSocket.getInetAddress() + " Port " + clientSocket.getPort());
 
                 MessageHandler messageHandler = new MessageHandler(inputMessage);
-                handleMessage(inputMessage);
+
             }
         }
         catch (IOException e){} catch (ClassNotFoundException e) {
@@ -300,7 +300,7 @@ public class Node {
         }
 
         System.out.println("leftside: " + leftSide.getPort());
-        System.out.println("rightside: " + leftSide.getPort());
+        System.out.println("rightside: " + rightSide.getPort());
     }
 
 
