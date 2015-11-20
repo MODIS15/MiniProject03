@@ -87,7 +87,8 @@ public class Node {
 
             ownSocket.setPort(port);
             inputServerSocket = new ServerSocket(ownSocket.getPort());
-            ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
+
+            System.out.println("Node Initiated.");
         }
         catch (IOException e){e.printStackTrace();}
     }
