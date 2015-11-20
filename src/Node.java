@@ -578,7 +578,7 @@ public class Node {
         {
             Thread.sleep(3000); // Time out
             sendMessage(rightSide.getSocket(), new EchoMessage(false, ownSocket.getPort()));
-            Thread.sleep(10000);
+            Thread.sleep(60000);
             throw new DeadException();
         }
         catch (IOException e)
