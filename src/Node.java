@@ -16,9 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The CircleNode represents a node in a unstructured circular P2P network.
+ * The Node represents a node in a unstructured circular P2P network.
  */
-public class CircleNode {
+public class Node {
 
     private SocketInfo ownSocket, leftSide, rightSide;
     private ServerSocket inputServerSocket;
@@ -35,7 +35,7 @@ public class CircleNode {
      * Constructor used when it is the first node in network
      * @param port for serversocket
      */
-    public CircleNode (int port)
+    public Node(int port)
     {
         leftSide = new SocketInfo("",-1); // Initially empty
         rightSide = new SocketInfo("",-1);
@@ -51,7 +51,7 @@ public class CircleNode {
      * @param _otherPort port of existing node
      * @param _otherIP ip of existing node
      */
-    public CircleNode (int port, int _otherPort, String _otherIP)
+    public Node(int port, int _otherPort, String _otherIP)
     {
         leftSide = new SocketInfo("",-1); // Initially empty
         rightSide = new SocketInfo(_otherIP,_otherPort);
@@ -581,14 +581,14 @@ public class CircleNode {
     /**
      * To create a new node write this into terminal:
      * - First node in system
-     *  Java CircleNode ServerSocketPort
+     *  Java Node ServerSocketPort
      *  eg:
-     *  Java CircleNode 66
+     *  Java Node 66
      *
      * - Not first node in system
-     * Java CircleNode ServerSocketPort ExistingNodeIP ExistingNodePort
+     * Java Node ServerSocketPort ExistingNodeIP ExistingNodePort
      * eg:
-     * Java CircleNode 66 55 127.0.0.1
+     * Java Node 66 55 127.0.0.1
      *
      *
      * @param args
@@ -605,7 +605,7 @@ public class CircleNode {
             try
             {
                 int port = Integer.parseInt(UserInput.askUser("Please enter Port for the server socket"));
-                CircleNode circleNode = new CircleNode(port);
+                Node node = new Node(port);
             }
             catch (NumberFormatException e){
                 System.out.println("Please enter a valid port...\nExiting.");
@@ -616,7 +616,7 @@ public class CircleNode {
             try {
                 int otherPort = Integer.parseInt(UserInput.askUser("Please enter Port of existing node"));
                 int ownPort = Integer.parseInt(UserInput.askUser("Please enter Port for the server socket"));
-                CircleNode circleNode = new CircleNode(ownPort,otherPort,input);
+                Node node = new Node(ownPort,otherPort,input);
             }
             catch (NumberFormatException e){
                 System.out.println("Please enter a valid port.\nExiting.");
