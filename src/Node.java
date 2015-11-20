@@ -121,7 +121,9 @@ public class Node {
                 System.out.println("Received connection from - IP:"+ clientSocket.getInetAddress() + " Port " + clientSocket.getPort());
                 Message inputMessage = readMessageFromInputStream(clientSocket); //Get incoming messages
 
+                //Creates a new thread whenever a message is to be handled. To avoid bottlenecks
                 if (inputMessage == null) return;
+                MessageHandler messageHandler = new MessageHandler(inputMessage);
                 handleMessage(inputMessage);
             }
         }
@@ -221,6 +223,21 @@ public class Node {
 
 
     //Message Handlers
+
+    /**
+     * This inner class is used to create new threads when incoming messages are to be handled.
+     * This is to avoid bottlenecks when many incoming messages are to be handled
+     */
+    private class MessageHandler extends Thread
+    {
+        public MessageHandler(Message message)
+        {
+            synchronized (this)
+            {
+                handleMessage(message);
+            }
+        }
+    }
 
     /**
      * This method is used to handle different message types appropriately.

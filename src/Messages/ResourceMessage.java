@@ -12,7 +12,7 @@ public class ResourceMessage extends Message implements Serializable {
     private Map<Integer, String> storedResource;
 
     public ResourceMessage(Map<Integer, String> resource){
-        super(MessageTypeEnum.ReconstructMessage);
+        super(MessageTypeEnum.ResourceMessage);
         this.storedResource = resource;
     }
 
