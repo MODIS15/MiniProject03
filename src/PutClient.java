@@ -1,4 +1,6 @@
 import Messages.PutMessage;
+import NodeUtils.UserInput;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -25,23 +27,17 @@ public class PutClient {
     {
             try
             {
-                System.out.println("Please enter a valid ip for a given node in the network: ");
-                String ip = System.console().readLine();
-                System.out.println("Please enter the port of the node : ");
-                String port = System.console().readLine();
+                String ip = UserInput.askUser("Please enter a valid ip for a given node in the network: ");
+                int port = Integer.parseInt(UserInput.askUser("Please enter the port of the node : "));
+                String resourceInput = UserInput.askUser("Please enter the message to put as a resource in the network: ");
 
-                System.out.println("Please enter the message to put as a resource in the network: ");
-                String resourceInput = System.console().readLine();
                 int resourceKey = resourceInput.hashCode();
                 System.out.println("The resource key is: "+resourceKey);
                 PutMessage message = new PutMessage(resourceKey, resourceInput,true);
-                System.out.println();
 
-                sendSerializedMessage(ip, Integer.parseInt(port), message);
+                sendSerializedMessage(ip, port, message);
 
-                System.out.println("Message has been put.\n" +
-                        "///////////Resetting...///////////");
-                System.out.println();
+                System.out.println("\nMessage has been put.\n" + "///////////Resetting...///////////\n");
 
 
             }
@@ -52,6 +48,10 @@ public class PutClient {
             catch (IOException e)
             {
                 e.printStackTrace();
+            }
+            catch (NumberFormatException e){
+                System.out.println("Please enter a valid port. Retrying...");
+                sendResourceMessage();
             }
     }
 

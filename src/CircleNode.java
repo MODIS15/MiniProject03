@@ -1,5 +1,6 @@
 import Messages.*;
 import NodeUtils.SocketInfo;
+import NodeUtils.UserInput;
 
 import java.io.IOException;
 //import java.io.ObjectInputStream;
@@ -594,13 +595,33 @@ public class CircleNode {
      */
     public static void main(String[] args)
     {
-        if (args.length == 1) //For the first port only
+        String input= UserInput.askUser("Welcome." +
+                "\n To create a new network write 'new' without the quotes" +
+                "\n To join an existing network please enter an existing node's IP and press enter.");
+
+
+        if (input.equals("new")) //For the first port only
         {
-            CircleNode circleNode = new CircleNode(Integer.parseInt(args[0]));
+            try
+            {
+                int port = Integer.parseInt(UserInput.askUser("Please enter Port for the server socket"));
+                CircleNode circleNode = new CircleNode(port);
+            }
+            catch (NumberFormatException e){
+                System.out.println("Please enter a valid port...\nExiting.");
+            };
         }
         else //For all other node there after.
         {
-            CircleNode circleNode = new CircleNode(Integer.parseInt(args[0]),Integer.parseInt(args[1]),args[2]);
+            try {
+                int otherPort = Integer.parseInt(UserInput.askUser("Please enter Port of existing node"));
+                int ownPort = Integer.parseInt(UserInput.askUser("Please enter Port for the server socket"));
+                CircleNode circleNode = new CircleNode(ownPort,otherPort,input);
+            }
+            catch (NumberFormatException e){
+                System.out.println("Please enter a valid port.\nExiting.");
+            }
+
         }
     }
 }

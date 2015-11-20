@@ -1,11 +1,14 @@
 import Messages.GetMessage;
 import Messages.PutMessage;
+import NodeUtils.UserInput;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 import java.util.regex.Pattern;
 
 /**
@@ -19,10 +22,10 @@ public class GetClient {
 
     private int ownPort;
 
-    public GetClient(int port) throws IOException
+    public GetClient() throws IOException
     {
-        ownPort = port;
-        incomingFoundResourceSocket = new ServerSocket(port);
+        ownPort = Integer.parseInt(UserInput.askUser("Please enter port for incoming messages"));
+        incomingFoundResourceSocket = new ServerSocket(ownPort);
         initialize();
     }
 
@@ -35,32 +38,24 @@ public class GetClient {
         Runnable listenForMessage = this::listenForIncomingResources; // Indicates that method is runnable for this class
         Thread thread = new Thread(listenForMessage);
         thread.start();
-        System.out.println("Use the following syntax for creating a getResource: ");
-        System.out.println("\"getmessage\" key ip port");
+        System.out.println("Welcome to GetClient");
 
         while(true)
         {
-            String request = System.console().readLine().toLowerCase().trim();
-            if(isValid(request))
-            {
-                getResource(request);
-            }
+            getResource();
         }
     }
 
     /**
      * Sends a GetMessage to a Node with specified resource when using the "get message" command from console.
-     * @param request: user input from console used to create a GetMessage for a specific resource.
      */
-    private void getResource(String request)
+    private void getResource()
     {
         try
         {
-            String[] splitRequest = request.split(" ");
-
-            int key = Integer.parseInt(splitRequest[0]);
-            String ip = splitRequest[1];
-            int port = Integer.parseInt(splitRequest[2]);
+            int key =   Integer.parseInt(UserInput.askUser("Please enter key of the requested resource:"));
+            String ip = UserInput.askUser("Please enter IP of an existing node: ");
+            int port =  Integer.parseInt(UserInput.askUser("Please enter port of an existing node:"));
 
             // GetClient passes its own ip to nodes holding resources to be sent back
             String localhost = incomingFoundResourceSocket.getInetAddress().getLocalHost().toString();
@@ -80,6 +75,10 @@ public class GetClient {
         {
             e.printStackTrace();
             System.out.println("An IOException occurred when creating the socket");
+        }
+        catch (NumberFormatException e){
+            System.out.println("key or port may only be digits.. Retrying.");
+            getResource();
         }
     }
 
@@ -146,18 +145,7 @@ public class GetClient {
         else System.out.println("The requested message could not be displayed");
     }
 
-    /**
-     * Validates the syntax of a get message command request.
-     * @param input: get request from user input in console
-     * @return true if get message is correct
-     */
-    private boolean isValid(String input)
-    {
-        //Pattern structure: getmessage "key" "ip" "port"
-        Pattern pattern = Pattern.compile("(getmessage [0-9]* [\\w.]* [0-9]*)");
-        return pattern.matcher(input).matches();
 
-    }
 
     /**
      * Serializes a message by writing it to an ObjectOutputStream and sends it to a Node.
@@ -178,7 +166,7 @@ public class GetClient {
     {
         try
         {
-            GetClient getClient = new GetClient(Integer.parseInt(args[0]));
+            GetClient getClient = new GetClient();
         }
         catch (IOException e)
         {
