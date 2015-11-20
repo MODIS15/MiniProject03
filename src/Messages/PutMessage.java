@@ -17,7 +17,7 @@ public class PutMessage extends Message implements Serializable{
         this.isSentFromPut = isFromPut;
     }
 
-    public boolean getSentFromPut(){return isSentFromPut;}
+    public boolean isSentFromPut(){return isSentFromPut;}
 
     public int getKey() {
         return key;

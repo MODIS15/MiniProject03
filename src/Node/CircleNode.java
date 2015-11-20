@@ -440,7 +440,7 @@ public class CircleNode {
         Integer key = putMessage.getKey();
         String resource = putMessage.getResource();
 
-        if (putMessage.getSentFromPut()) // Resource is put inside ownResources if
+        if (putMessage.isSentFromPut()) // Resource is put inside ownResources if
         {
             ownResources.put(key, resource);
 
@@ -473,7 +473,7 @@ public class CircleNode {
             int port = getMessage.getPort();
             String ip = getMessage.getIp();
 
-            String message = "";
+            String message;
             Socket getClientSocket = new Socket(ip, port); // Connect to client
 
             if (ownResources.containsKey(key)) // Checks if ownResources has key
@@ -488,7 +488,7 @@ public class CircleNode {
             }
             else //Otherwise propagate message to the right side node.
             {
-                sendMessage(new Socket(rightSideIp, rightSidePort), new GetMessage(key, ip, port));
+                sendMessage(rightSide.getSocket(), new GetMessage(key, ip, port));
             }
         }
         catch (IOException e) {e.printStackTrace();}
@@ -501,17 +501,17 @@ public class CircleNode {
     private void reconstruct()
     {
         underConstruction = true;
-        System.out.println(rightSidePort + "=" + leftSidePort + " " + rightSideIp + "=" + leftSideIp);
+        System.out.println("Comparing right and left: "+rightSide.getPort() + "=" + leftSide.getPort() + " " + rightSide.getIp() + "=" + leftSide.getIp());
         if (rightSidePort == leftSidePort)
         {
             System.out.println("STOP");
             echo.interrupt();
             echo = null;
-            rightSideIp = "";
-            leftSideIp = "";
+            rightSide.setIp("");
+            leftSide.setIp("");
             if (!referencedResources.isEmpty())
             {
-                String message = "";
+                String message;
                 for (int key : referencedResources.keySet())
                 {
                     message = referencedResources.get(key);
@@ -524,15 +524,13 @@ public class CircleNode {
         else
         {
             try {
-                String lostHostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
-                int index = lostHostIP.indexOf("/");
-                lostHostIP = lostHostIP.substring(index + 1, lostHostIP.length());
+                updateCurrentNodeIp();
 
                 ReconstructMessage reconstructMessage = new ReconstructMessage(
-                        rightSideIp,
-                        rightSidePort,
-                        lostHostIP,
-                        ownPort
+                        rightSide.getIp(),
+                        rightSide.getPort(),
+                        lostHostIP, //TODO FIX
+                        ownSocket.getPort()
                 );
 
                 sendMessage(new Socket(leftSideIp, leftSidePort), reconstructMessage);
