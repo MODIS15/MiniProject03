@@ -1,4 +1,4 @@
-package Node;
+package NodeUtils;
 
 import java.io.IOException;
 import java.net.Socket;

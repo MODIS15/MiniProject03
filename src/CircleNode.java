@@ -1,6 +1,5 @@
-package Node;
-
 import Messages.*;
+import NodeUtils.SocketInfo;
 
 import java.io.IOException;
 //import java.io.ObjectInputStream;
@@ -16,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The Node.CircleNode represents a node in a unstructured circular P2P network.
+ * The CircleNode represents a node in a unstructured circular P2P network.
  */
 public class CircleNode {
 
@@ -37,6 +36,8 @@ public class CircleNode {
      */
     public CircleNode (int port)
     {
+        leftSide = new SocketInfo("",-1); // Initially empty
+        rightSide = new SocketInfo("",-1);
         setUpServer(port);
         Runnable run = this::listenToServerSocket;
         Thread thread = new Thread(run);
@@ -51,7 +52,6 @@ public class CircleNode {
      */
     public CircleNode (int port, int _otherPort, String _otherIP)
     {
-        ownSocket = new SocketInfo("",-1);// Initially empty
         leftSide = new SocketInfo("",-1); // Initially empty
         rightSide = new SocketInfo(_otherIP,_otherPort);
         setUpServer(port);
@@ -82,6 +82,8 @@ public class CircleNode {
     {
         try
         {
+            ownSocket = new SocketInfo("",-1);// Initially empty
+
             ownSocket.setPort(port);
             inputServerSocket = new ServerSocket(ownSocket.getPort());
             ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
