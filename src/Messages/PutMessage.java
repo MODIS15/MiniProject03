@@ -8,16 +8,16 @@ import java.io.Serializable;
 public class PutMessage extends Message implements Serializable{
     private int key;
     private String resource;
-    private boolean original;
+    private boolean isSentFromPut;
 
-    public PutMessage(int key, String resource, boolean original){
+    public PutMessage(int key, String resource, boolean isFromPut){
         super(MessageTypeEnum.PutMessage);
         this.key = key;
         this.resource = resource;
-        this.original = original;
+        this.isSentFromPut = isFromPut;
     }
 
-    public boolean getOriginal(){return original;}
+    public boolean getSentFromPut(){return isSentFromPut;}
 
     public int getKey() {
         return key;

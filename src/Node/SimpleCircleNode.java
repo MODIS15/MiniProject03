@@ -1,3 +1,5 @@
+package Node;
+
 import Messages.*;
 
 import java.io.IOException;
@@ -9,8 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 //import java.net.SocketException;
 //import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
+
 
 /**
  * Created by Jakob_P_Holm on 19/11/2015.

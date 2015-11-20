@@ -1,3 +1,5 @@
+package Node;
+
 import Messages.*;
 
 import java.io.IOException;
@@ -9,18 +11,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 //import java.net.SocketException;
 //import java.net.UnknownHostException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
- * The CircleNode represents a node in a unstructured circular P2P network.
+ * The Node.CircleNode represents a node in a unstructured circular P2P network.
  */
 public class CircleNode {
 
     private String hostIp, leftSideIp, rightSideIp;
+    private SocketInfo ownSocket, leftSide, rightSide;
+
     private int ownPort, leftSidePort, rightSidePort;
 
-    private HashMap<Integer, String> ownResources = new HashMap<>();
-    private HashMap<Integer, String> referencedResources = new HashMap<>();
+    private Map<Integer, String> ownResources = new HashMap<>();
+    private Map<Integer, String> referencedResources = new HashMap<>();
     private ServerSocket inputServerSocket;
 
     private Thread echo;
@@ -28,8 +34,7 @@ public class CircleNode {
 
     public CircleNode (int port)
     {
-        ownPort = port;
-        setUpServer();
+        setUpServer(port);
         Runnable run = this::listenToServerSocket;
         Thread thread = new Thread(run);
         thread.start();
@@ -37,15 +42,13 @@ public class CircleNode {
 
     public CircleNode (int port, int _ortherPort, String _otherIP)
     {
-        ownPort = port;
-        hostIp = ""; // Initially empty
-        leftSideIp = ""; // Initially empty
-        rightSideIp = _otherIP;
-        rightSidePort = _ortherPort;
-        setUpServer();
+        ownSocket = new SocketInfo("",-1);// Initially empty
+        leftSide = new SocketInfo("",-1); // Initially empty
+        rightSide = new SocketInfo(_otherIP,_ortherPort);
+        setUpServer(port);
 
         //Set up connection to others.
-        sendStartConnectMessage();
+        ConnectToExistingNode();
 
 
         Runnable listen = this::listenToServerSocket;
@@ -56,32 +59,40 @@ public class CircleNode {
     /**
      * Creates a server socket with the node's own port.
      */
-    public void setUpServer()
+    public void setUpServer(int port)
     {
         try
         {
+            ownSocket.setPort(port);
             inputServerSocket = new ServerSocket(ownPort);
-            hostIp = inputServerSocket.getInetAddress().getLocalHost().getHostAddress();
+            ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
         }
         catch (IOException e){e.printStackTrace();}
     }
 
     /**
-     *
+     * Sends a connect message to an existing. This is used by new nodes that wants to join the system.
      */
-    public void sendStartConnectMessage()
+    public void ConnectToExistingNode()
     {
         try
         {
-            Socket startSocket = new Socket(rightSideIp, rightSidePort);
+            Socket destinationNode = rightSide.getSocket();
 
-            ConnectMessage connectMessage = new ConnectMessage("From",hostIp,ownPort);
+            ConnectMessage connectMessage = new ConnectMessage("From",ownSocket.getIp(),ownSocket.getPort());
 
-            sendMessage(startSocket,connectMessage);
+            sendMessage(destinationNode,connectMessage);
         }
         catch (IOException e){e.printStackTrace();}
     }
 
+    /***
+     * Gets/retrieve a message from an input stream. If the incoming object is a message.
+     * @param s
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     private Message readMessageFromInputStream(Socket s) throws IOException, ClassNotFoundException {
         if(s==null) return null;
         ObjectInputStream inputStream = new ObjectInputStream(s.getInputStream());
@@ -91,12 +102,14 @@ public class CircleNode {
         else return null;
     }
 
+    /**
+     * Listen to currents node server socket for incoming connection (From other nodes).
+     */
     public void listenToServerSocket() {
         try {
             while (true) {
                 Socket clientSocket = inputServerSocket.accept();
-
-                Message inputMessage = readMessageFromInputStream(clientSocket);
+                Message inputMessage = readMessageFromInputStream(clientSocket); //Get incoming messages
 
                 if (inputMessage == null) return;
                 handleMessage(inputMessage);
@@ -117,7 +130,6 @@ public class CircleNode {
         {
             case ConnectMessage: //Join nodes
                 handleConnectMessage((ConnectMessage)message);
-                System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
                 initiateNewEcho();
                 break;
             case ReconstructMessage: // Reconstruct circle network if broken
@@ -181,68 +193,65 @@ public class CircleNode {
             handleConnectClosureMessage(ip,port);
         }
 
-        System.out.println("leftside: " + leftSidePort);
-        System.out.println("rightside: " + rightSidePort);
+        System.out.println("leftside: " + leftSide.getPort());
+        System.out.println("rightside: " + leftSide.getPort());
+    }
+
+    private void updateCurrentNodeIp() throws UnknownHostException {
+        ownSocket.setIp(inputServerSocket.getInetAddress().getLocalHost().getHostAddress());
     }
 
     /**
      * Handles a From connect message used to join a network initially.
      * The new node is connected to the left side of the existing node.
-     * @param ip of node
-     * @param port of node
+     * @param newIp of new node
+     * @param newPort of new node
      */
-    private void handleConnectFromMessage(String ip, int port)
+    private void handleConnectFromMessage(String newIp, int newPort)
     {
         try
         {
-            if (rightSideIp.equals("") && leftSideIp.equals("")) // Only one node in network
+            if (rightSide.getIp().equals("") && leftSide.getIp().equals("")) // Only one node in network
             {
                 System.out.println("INSIDE");
-                System.out.println(port + " " + ip);
+                System.out.println(newPort + " " + newIp);
 
                 //Sets sender ip and port to right and left side
-                rightSideIp = ip;   rightSidePort = port;
-                leftSideIp = ip;    leftSidePort = port;
+                rightSide = new SocketInfo(newIp,newPort);
+                leftSide = new SocketInfo(newIp,newPort);
 
-                System.out.println(rightSidePort + " " + rightSideIp);
+                System.out.println("Connecting to Rightside - info: "+ rightSide.toString());
 
                 //Send back to new node that it should put left side to this node.
-                Socket rightSocket = new Socket(rightSideIp, rightSidePort);
-                System.out.println("Create socket");
+                Socket rightSocket = rightSide.getSocket();
 
-                String hostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
-                int index  = hostIP.indexOf("/");
-                hostIP = hostIP.substring(index+1,hostIP.length());
+                //Updating stored ip of current node if it has changed
+                updateCurrentNodeIp();
 
-                // Tell node it should set left side to this node
-                ConnectMessage connectMessage = new ConnectMessage("Closure",hostIP,ownPort);
-
+                // Tell rightSide node that it should set left side to current node
+                ConnectMessage connectMessage = new ConnectMessage("Closure",ownSocket.getIp(),ownSocket.getPort());
                 sendMessage(rightSocket, connectMessage);
 
-                if (!ownResources.isEmpty()) // Send all information to new node
+                if (!ownResources.isEmpty()) // Send all information to rightSide node (The new node)
                 {
-                    sendMessage(new Socket(rightSideIp,rightSidePort),
-                                new ResourceMessage(ownResources));
+                    sendMessage(rightSide.getSocket(), new ResourceMessage(ownResources));
                 }
             }
             else //When there is more than one node
             {
-                Socket leftSocket;
+                SocketInfo newNode = new SocketInfo(newIp,newPort) ;
                 if (!referencedResources.isEmpty()) // Sends all inherited references to new middle node
                 {
-                    leftSocket = new Socket(ip, port);
-                    sendMessage(leftSocket, new ResourceMessage(referencedResources));
+                    sendMessage(newNode.getSocket(), new ResourceMessage(referencedResources));
                     referencedResources.clear();
                 }
 
-                // Tell left side to set right side to new node
-                leftSocket = new Socket(leftSideIp, leftSidePort);
-                ConnectMessage connectMessage = new ConnectMessage("To",ip,port);
-                sendMessage(leftSocket, connectMessage);
+                // Tell left side to set right side to the new node
+                ConnectMessage connectMessage = new ConnectMessage("To",newNode.getIp(),newNode.getPort());
+                sendMessage(leftSide.getSocket(), connectMessage);
 
-                // Left side set to sender
-                leftSideIp = ip;
-                leftSidePort = port;
+                // Current nodes left side set to new node
+                leftSide = newNode;
             }
         }
         catch (IOException e){e.printStackTrace();}
@@ -256,8 +265,7 @@ public class CircleNode {
      */
     private void handleConnectToMessage(String ip, int port)
     {
-        rightSideIp = ip;
-        rightSidePort = port;
+        rightSide = new SocketInfo(ip,port);
 
         try
         {
@@ -265,20 +273,16 @@ public class CircleNode {
             {
                 if (!ownResources.isEmpty()) // Send copy of own resources to new right node so it can store them as references.
                 {
-                    sendMessage(new Socket(rightSideIp, rightSidePort),
-                                        new ResourceMessage(ownResources));
+                    sendMessage(rightSide.getSocket(),new ResourceMessage(ownResources));
                 }
                 underConstruction = false;
             }
 
-            String hostIP = inputServerSocket.getInetAddress().getLocalHost().toString();
-            int index  = hostIP.indexOf("/");
-            hostIP = hostIP.substring(index+1,hostIP.length());
+            updateCurrentNodeIp();
 
             // Inform new right node to set left side to this node
-            ConnectMessage connectMessage = new ConnectMessage("Closure",hostIP,ownPort);
-            Socket rightSocket = new Socket(rightSideIp, rightSidePort);
-            sendMessage(rightSocket, connectMessage);
+            ConnectMessage connectMessage = new ConnectMessage("Closure",ownSocket.getIp(),ownSocket.getPort());
+            sendMessage(rightSide.getSocket(), connectMessage);
         }
         catch (IOException e){e.printStackTrace();}
     }
@@ -291,8 +295,7 @@ public class CircleNode {
      */
     private void handleConnectClosureMessage(String ip, int port)
     {
-        leftSideIp = ip;
-        leftSidePort = port;
+        leftSide = new SocketInfo(ip,port);
         if (underConstruction) {underConstruction = false; } // REMOVE?
     }
 
@@ -304,49 +307,43 @@ public class CircleNode {
     {
         try
         {
-            String lostIP = reconstructMessage.getLostSideIp();
-            int lostPort = reconstructMessage.getLostSidePort();
-            String discoverIp = reconstructMessage.getDiscoverIp();
-            int discoverPort = reconstructMessage.getDiscoverPort();
+            SocketInfo lostNode = new SocketInfo( reconstructMessage.getLostSideIp(),reconstructMessage.getLostSidePort());
+            SocketInfo discoverNode = new SocketInfo(reconstructMessage.getDiscoverIp(),reconstructMessage.getDiscoverPort());
 
-            if (lostPort == leftSidePort) //If left side node equals missing/lost port try to reconnect
+            if (lostNode.getPort() == leftSide.getPort()) //If left side node equals missing/lost port try to reconnect
             {
                 // Send all inherited references to right side
                 if (!referencedResources.isEmpty())
                 {
-                    sendMessage(new Socket(rightSideIp,rightSidePort),
-                                new ResourceMessage(referencedResources)
-                    );
+                    sendMessage(rightSide.getSocket(), new ResourceMessage(referencedResources));
 
-                    String message = "";
-                    for (Integer key : referencedResources.keySet()) // Remove all references now replaced by ownResources
+                    //Set references resource to own resource
+                    String message;
+                    for (Integer key : referencedResources.keySet())
                     {
                         message = referencedResources.get(key);
                         ownResources.put(key, message);
                     }
-                    referencedResources.clear();
+                    referencedResources.clear(); //Purge references
                 }
 
-                String localhost = inputServerSocket.getInetAddress().getLocalHost().toString();
-                int index  = localhost.indexOf("/");
-                localhost = localhost.substring(index+1,localhost.length());
+                updateCurrentNodeIp();
 
                 // Inform new left side that it should connect right side with itself
-                Socket newLeftSideSocket = new Socket(discoverIp, discoverPort);
-                sendMessage(newLeftSideSocket, new ConnectMessage("To", localhost, ownPort));
-                System.out.println("Tried to reconnect with: " + discoverIp + " " + discoverPort);
+                Socket newLeftSideSocket = discoverNode.getSocket();
+                sendMessage(newLeftSideSocket, new ConnectMessage("To", ownSocket.getIp(), ownSocket.getPort()));
+                System.out.println("Tried to reconnect with: "+ discoverNode.toString());
                 underConstruction = true; // Responds differently when a resourceMessage arrives.
             }
             else //Pass ip and port information to right side
             {
                 // Can be removed
                 ReconstructMessage newReconstructMessage = new ReconstructMessage(
-                        lostIP = lostIP,
-                        lostPort = lostPort,
-                        discoverIp = discoverIp,
-                        discoverPort = discoverPort
-                );
-                sendMessage(new Socket(leftSideIp, leftSidePort), newReconstructMessage);
+                        lostNode.getIp(),
+                        lostNode.getPort(),
+                        discoverNode.getIp(),
+                        discoverNode.getPort());
+                sendMessage(leftSide.getSocket(), newReconstructMessage);
             }
         }catch (IOException e){e.printStackTrace();}
     }
@@ -363,7 +360,7 @@ public class CircleNode {
         {
             System.out.println("SEND ECHO RETURN");
             //Send echo-message return
-            try {sendMessage(new Socket(leftSideIp,leftSidePort), new EchoMessage(true,ownPort));}
+            try {sendMessage(leftSide.getSocket(), new EchoMessage(true,ownPort));}
             catch (IOException e){e.printStackTrace();}
         }
         else
@@ -383,12 +380,12 @@ public class CircleNode {
      */
     private void initiateNewEcho()
     {
+        System.out.println("ECHO-MESSAGE"); // Start echo heartbeat
         if (echo != null)
         {
             echo.interrupt();
             echo = null;
         }
-        System.out.println("CALL!!!");
         Runnable echoSend = this::sendEcho;
         echo = new Thread(echoSend);
         echo.start();
@@ -404,8 +401,8 @@ public class CircleNode {
         try
         {
             Thread.sleep(3000); // Time out
-            System.out.println("ECHO!!!");
-            sendMessage(new Socket(rightSideIp, rightSidePort), new EchoMessage(false, ownPort));
+            System.out.println("Sent Heartbeat.");
+            sendMessage(rightSide.getSocket(), new EchoMessage(false, ownPort));
             Thread.sleep(5000);
         }
         catch (IOException e)
@@ -413,7 +410,9 @@ public class CircleNode {
             System.out.println("An IOException occurred : ALERT...");
             reconstruct();
         }
-        catch (InterruptedException e) {}
+        catch (InterruptedException e) {
+            System.out.println("Neighbour is alive");
+        }
     }
 
     /**
@@ -440,9 +439,8 @@ public class CircleNode {
     {
         Integer key = putMessage.getKey();
         String resource = putMessage.getResource();
-        boolean original = putMessage.getOriginal(); // True if message is from PutClient
 
-        if (putMessage.getOriginal()) // Resource is put inside ownResources
+        if (putMessage.getSentFromPut()) // Resource is put inside ownResources if
         {
             ownResources.put(key, resource);
 
