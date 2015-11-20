@@ -11,7 +11,7 @@ public class ResourceMessage extends Message implements Serializable {
     private HashMap<Integer,String> storedResource;
 
     public ResourceMessage(HashMap<Integer,String> resource){
-        super(MessageTypeEnum.ReconstructMessage);
+        super(MessageTypeEnum.ResourceMessage);
         this.storedResource = resource;
     }
 

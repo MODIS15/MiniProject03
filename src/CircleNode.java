@@ -108,11 +108,23 @@ public class CircleNode {
                 Message inputMessage = readMessageFromInputStream(clientSocket);
 
                 if (inputMessage == null) return;
-                handleMessage(inputMessage);
+                MessageHandler messageHandler = new MessageHandler(inputMessage);
             }
         }
         catch (IOException e){} catch (ClassNotFoundException e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public class MessageHandler extends Thread
+    {
+        public MessageHandler(Message message)
+        {
+            synchronized (this)
+            {
+                handleMessage(message);
+            }
         }
     }
 
@@ -329,14 +341,12 @@ public class CircleNode {
         boolean echoMessageContent = echoMessage.getStillAlive();
         if (echoMessageContent == false)
         {
-            System.out.println("SEND ECHO RETURN");
             //Send echo-message return
             try {sendEchoMessage(new Socket(leftSideIp,leftSidePort), new EchoMessage(true,ownPort));}
             catch (IOException e){e.printStackTrace();}
         }
         else
         {
-            System.out.println("START NEW ECHO");
             //Receive echo-message - Stop echo
             echo.interrupt();
             echo = null;
@@ -364,7 +374,6 @@ public class CircleNode {
             echo.interrupt();
             echo = null;
         }
-        System.out.println("CALL!!!!!");
         Runnable echoSend = this::sendEcho;
         echo = new Thread(echoSend);
         echo.start();
@@ -410,8 +419,9 @@ public class CircleNode {
 
         if (original) //If it's original. Then it' should be put inside ownResources and a reference should be send to the right side.
         {
+            System.out.println("RESIVED ORIGINAL PUT " + message);
             ownResources.put(key, message);
-
+            System.out.println();
             //Send resource to the right socket. If it exsist's.
             if (!rightSideIp.equals(""))
             {
@@ -425,6 +435,7 @@ public class CircleNode {
         }
         else //If it isn't original. Then it's a reference.
         {
+            System.out.println("RESIVED REFERENCED PUT " + message);
             refferenceresources.put(key, message);
         }
     }

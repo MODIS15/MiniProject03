@@ -42,7 +42,6 @@ public class GetClient {
         {
             String request = System.console().readLine().toLowerCase().trim();
             getResource(request);
-            System.out.println("Do agian");
         }
     }
 
